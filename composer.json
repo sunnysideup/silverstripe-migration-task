@@ -1,0 +1,33 @@
+{
+    "name": "sunnysideup/migration-task",
+    "type": "silverstripe-vendormodule",
+    "description": "Helps developers upgrade database data from one version to the next where the structure is incompatible",
+    "keywords": [
+        "Silverstripe-CMS",
+        "CMS",
+        "Silverstripe",
+        "migration-task",
+        "migration",
+        "data",
+        "upgrade",
+        "dev-tools",
+        "db tools",
+        "elemental upgrade"
+    ],
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Nicolaas Francken",
+            "email": "modules@sunnysideup.co.nz",
+            "role": "lead developer"
+        }
+    ],
+    "require": {
+        "silverstripe/framework": "~4"
+    },
+    "extra": {
+        "expose": [
+            "client"
+        ]
+    }
+}
