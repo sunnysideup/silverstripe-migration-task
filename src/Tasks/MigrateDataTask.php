@@ -1,8 +1,9 @@
 <?php
 
-namespace Sunnysideup\MigrateData\Tasks;
+namespace Sunnysideup\MigrateData\Tasks\MigrateDataTask;
 
 use SilverStripe\ORM\DB;
+use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Dev\BuildTask;
@@ -29,10 +30,6 @@ class MigrateDataTask extends BuildTask
         $this->flushNow('-----------------------------');
     }
 
-    protected $itemsToMigrate = [
-        'ElementalMigration'
-    ];
-
     /**
      * Queries the config for Migrate definitions, and runs migrations
      *
@@ -42,7 +39,7 @@ class MigrateDataTask extends BuildTask
     public function performMigration()
     {
         $fullList = Config::inst()->get(self::class, 'items_to_migrate');
-        foreach($this->itemsToMigrate as $item => $details) {
+        foreach($fullList as $item => $details) {
             $this->flushNow( '<h2>Starting Migration for '.$item.'</h2>');
             $preSqlQueries = $details['pre_sql_queries'];
             $data = $details['data'];
