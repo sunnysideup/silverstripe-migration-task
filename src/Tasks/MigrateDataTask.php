@@ -1,11 +1,12 @@
 <?php
 
-namespace Sunnysideup\MigrateData\Tasks\MigrateDataTask;
+namespace Sunnysideup\MigrateData\Tasks;
 
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Environment;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\Control\Director;
 
@@ -19,10 +20,12 @@ class MigrateDataTask extends BuildTask
 
     public function run($request)
     {
+        $this->flushNow('-----------------------------');
+        $this->flushNow('THE START - look out for THE END ...');
+        $this->flushNow('-----------------------------');
         DataObject::Config()->set('validation_enabled', false);
         ini_set('memory_limit', '512M');
         Environment::increaseMemoryLimitTo();
-        //20 minutes
         Environment::increaseTimeLimitTo(7200);
         $this->performMigration();
         $this->flushNow('-----------------------------');
@@ -191,7 +194,7 @@ class MigrateDataTask extends BuildTask
         $connection = DB::get_conn();
         $database = $connection->getSelectedDatabase();
         return DB::query('
-            SELECT COUNT()
+            SELECT COUNT("table_name")
             FROM information_schema.tables
             WHERE table_schema = \''.$database.'\'
                 AND table_name = \''.$tableName.'\'
