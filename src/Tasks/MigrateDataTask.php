@@ -27,7 +27,9 @@ class MigrateDataTask extends BuildTask
         ini_set('memory_limit', '512M');
         Environment::increaseMemoryLimitTo();
         Environment::increaseTimeLimitTo(7200);
+
         $this->performMigration();
+
         $this->flushNow('-----------------------------');
         $this->flushNow('THE END');
         $this->flushNow('-----------------------------');
