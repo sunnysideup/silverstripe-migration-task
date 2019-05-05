@@ -18,7 +18,14 @@ class MigrateDataTask extends BuildTask
 
     public function run($request)
     {
+        DataObject::Config()->set('validation_enabled', false);
+        ini_set('memory_limit', '512M');
+        Environment::increaseMemoryLimitTo();
+        //20 minutes
+        Environment::increaseTimeLimitTo(7200);
         $this->performMigration();
+        $this->flushNow('-----------------------------');
+        $this->flushNow('THE END');
         $this->flushNow('-----------------------------');
     }
 
@@ -34,12 +41,13 @@ class MigrateDataTask extends BuildTask
      */
     public function performMigration()
     {
-        foreach($this->itemsToMigrate as $item) {
+        $fullList = Config::inst()->get(self::class, 'items_to_migrate');
+        foreach($this->itemsToMigrate as $item => $details) {
             $this->flushNow( '<h2>Starting Migration for '.$item.'</h2>');
-            $preSqlQueries = Config::inst()->get($item, 'pre_sql_queries');
-            $data = Config::inst()->get($item, 'data');
-            $publishClasses = Config::inst()->get($item, 'publish_classes');
-            $postSqlQueries = Config::inst()->get($item, 'post_sql_queries');
+            $preSqlQueries = $details['pre_sql_queries'];
+            $data = $details['data'];
+            $publishClasses = $details['publish_classes'];
+            $postSqlQueries = $details['post_sql_queries'];
 
             if ($preSqlQueries) {
                 $this->flushNow( '<h2>Performing PRE SQL Queries</h2>');
