@@ -23,6 +23,7 @@ class MigrateDataTask extends BuildTask
         $this->flushNow('-----------------------------');
         $this->flushNow('THE START - look out for THE END ...');
         $this->flushNow('-----------------------------');
+
         DataObject::Config()->set('validation_enabled', false);
         ini_set('memory_limit', '512M');
         Environment::increaseMemoryLimitTo();
@@ -165,21 +166,22 @@ class MigrateDataTask extends BuildTask
                 }
                 array_push($oldEntryIDs, $oldEntry['ID']);
             }
+            if(count($oldEntryIDs)) {
+                //update the new table with the old values
+                //for the rows that join with the ID and match the list of OLD ids.
+                $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
+                $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
+                $updateQuery .= 'SET ';
 
-            //update the new table with the old values
-            //for the rows that join with the ID and match the list of OLD ids.
-            $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
-            $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
-            $updateQuery .= 'SET ';
-
-            for ($i = 0; $i < count($fieldNamesNew) && $i < count($fieldNamesOld); $i++) {
-                if ($i > 0) {
-                    $updateQuery .= ', ';
+                for ($i = 0; $i < count($fieldNamesNew) && $i < count($fieldNamesOld); $i++) {
+                    if ($i > 0) {
+                        $updateQuery .= ', ';
+                    }
+                    $updateQuery .=  '"tablenew"."' . $fieldNamesNew[$i] . '" = "tableold"."' . $fieldNamesOld[$i] . '" ';
                 }
-                $updateQuery .=  '"tablenew"."' . $fieldNamesNew[$i] . '" = "tableold"."' . $fieldNamesOld[$i] . '" ';
+                $updateQuery .= 'WHERE "tablenew"."ID" IN (' . implode(', ', $oldEntryIDs) . ');';
+                $sqlResults = DB::query($updateQuery);
             }
-            $updateQuery .= 'WHERE "tablenew"."ID" IN (' . implode(', ', $oldEntryIDs) . ');';
-            $sqlResults = DB::query($updateQuery);
 
             $this->flushNow( "<p>Migration of $tableOld to $tableNew successful.</p>" );
 
