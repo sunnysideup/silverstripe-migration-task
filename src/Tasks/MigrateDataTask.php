@@ -55,14 +55,13 @@ class MigrateDataTask extends BuildTask
             if ($preSqlQueries) {
                 $this->flushNow( '<h2>Performing PRE SQL Queries</h2>');
                 foreach ($preSqlQueries as $sqlQuery) {
-
+                    $this->flushNow($sqlQuery);
                     try {
                         $sqlResults = DB::query($sqlQuery);
-                        $this->flushNow( "<p>Run '$sqlQuery'</p>");
-
+                        $this->flushNow('... DONE');
                     } catch (Exception $e) {
-                        $this->flushNow( "<p>Unable to run '$sqlQuery'</p>");
-                        $this->flushNow( "<p>" . $e->getMessage() . "</p>");
+                        $this->flushNow( "Unable to run '$sqlQuery'");
+                        $this->flushNow( "" . $e->getMessage() . "");
                     }
                 }
             }
@@ -70,6 +69,7 @@ class MigrateDataTask extends BuildTask
             if ($data) {
                 $this->flushNow( '<h2>Migrating data</h2>');
                 foreach ($data as $dataItem) {
+                    $this->flushNow( '<h4>Migrating data '.$dataItem['old_table'].' to '.$dataItem['new_table'].'</h4>');
                     $this->migrateSimple(
                         $dataItem['old_table'],
                         $dataItem['new_table'],
@@ -82,7 +82,7 @@ class MigrateDataTask extends BuildTask
             if ($publishClasses) {
                 $this->flushNow( '<h2>Publish classes</h2>');
                 foreach ($publishClasses as $publishClass) {
-
+                    $this->flushNow( '<h4>Publishing '.$publishClass.'</h4>' );
                     try {
                         $publishItems = $publishClass::get();
                         foreach ($publishItems as $publishItem) {
@@ -90,16 +90,16 @@ class MigrateDataTask extends BuildTask
                             $publishItem->doPublish();
                         }
                         $this->flushNow(
-                            "<p>Published " . $publishItems->count() .
+                            "Published " . $publishItems->count() .
                             " " .
                             $publishClass .
                             " item" .
-                            ($publishItems->count() == 1 ? "" : "s") . ".</p>"
+                            ($publishItems->count() == 1 ? "" : "s") . "."
                         );
 
                     } catch (Exception $e) {
-                        $this->flushNow( "<p>Unable to publish " . $publishClass . "</p>", 'error');
-                        $this->flushNow( "<p>" . $e->getMessage() . "</p>", 'error');
+                        $this->flushNow( "Unable to publish " . $publishClass . "", 'error');
+                        $this->flushNow( "" . $e->getMessage() . "", 'error');
                     }
                 }
             }
@@ -107,14 +107,14 @@ class MigrateDataTask extends BuildTask
             if ($postSqlQueries) {
                 $this->flushNow( '<h2>Performing POST SQL Queries</h2>' );
                 foreach ($postSqlQueries as $sqlQuery) {
-
+                    $this->flushNow($sqlQuery);
                     try {
                         $sqlResults = DB::query($sqlQuery);
-                        $this->flushNow( "<p>Run '$sqlQuery'</p>");
+                        $this->flushNow('... DONE');
 
                     } catch (Exception $e) {
-                        $this->flushNow( "<p>Unable to run '$sqlQuery'</p>");
-                        $this->flushNow( "<p>" . $e->getMessage() . "</p>");
+                        $this->flushNow( "Unable to run '$sqlQuery'");
+                        $this->flushNow( "" . $e->getMessage() . "");
                     }
                 }
             }
@@ -136,11 +136,11 @@ class MigrateDataTask extends BuildTask
     {
 
         if(! $this->tableExists($tableOld)) {
-            $this->flusNow( "<p>$tableOld (old table) does not exist</p>", 'error');;
+            $this->flushNow( "$tableOld (old table) does not exist", 'error');;
         }
 
         if(! $this->tableExists($tableNew)) {
-            $this->flusNow( "<p>$tableNew (old table) does not exist</p>", 'error');;
+            $this->flushNow( "$tableNew (old table) does not exist", 'error');;
         }
 
         try {
@@ -162,7 +162,7 @@ class MigrateDataTask extends BuildTask
             foreach ($oldEntries as $oldEntry) {
                 if (!in_array($oldEntry['ID'], $newEntryIDs)) {
                     DB::query('INSERT INTO "' . $tableNew . '" ("ID") VALUES (' . $oldEntry['ID'] . ');');
-                    $this->flushNow( '<p>Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.</p>' );
+                    $this->flushNow( 'Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.' );
                 }
                 array_push($oldEntryIDs, $oldEntry['ID']);
             }
@@ -183,11 +183,11 @@ class MigrateDataTask extends BuildTask
                 $sqlResults = DB::query($updateQuery);
             }
 
-            $this->flushNow( "<p>Migration of $tableOld to $tableNew successful.</p>" );
+            $this->flushNow( "... successful." );
 
         } catch (Exception $e) {
-            $this->flushNow( "<p>Unable to migrate $tableOld to $tableNew.</p>" );
-            $this->flushNow( "<p>" . $e->getMessage() . "</p>" );
+            $this->flushNow( "Unable to migrate $tableOld to $tableNew." );
+            $this->flushNow($e->getMessage());
         }
 
     }
