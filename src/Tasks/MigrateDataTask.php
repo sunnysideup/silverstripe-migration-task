@@ -140,7 +140,7 @@ class MigrateDataTask extends BuildTask
         }
 
         if(! $this->tableExists($tableNew)) {
-            $this->flushNow( "$tableNew (old table) does not exist", 'error');;
+            $this->flushNow( "$tableNew (new table) does not exist", 'error');;
         }
 
         try {
