@@ -171,6 +171,10 @@ class MigrateDataTask extends BuildTask
                 //for the rows that join with the ID and match the list of OLD ids.
                 $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
                 $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
+                if(substr($tableNew, -9) == '_versions') {
+                    $updateQuery .= ' AND "tablenew"."RecordID" = "tableold"."RecordID" ';
+                    // also link to RecordID ...
+                }
                 $updateQuery .= 'SET ';
 
                 for ($i = 0; $i < count($fieldNamesNew) && $i < count($fieldNamesOld); $i++) {
@@ -183,7 +187,7 @@ class MigrateDataTask extends BuildTask
                 $sqlResults = DB::query($updateQuery);
             }
 
-            $this->flushNow( "... successful." );
+            $this->flushNow( "... DONE" );
 
         } catch (Exception $e) {
             $this->flushNow( "Unable to migrate $tableOld to $tableNew." );
