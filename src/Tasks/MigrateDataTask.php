@@ -18,6 +18,8 @@ class MigrateDataTask extends BuildTask
 
     protected $enabled = true;
 
+    protected $includeInserts = true;
+
     public function run($request)
     {
         $this->flushNow('-----------------------------');
@@ -42,97 +44,140 @@ class MigrateDataTask extends BuildTask
      *
      * @return string
      */
-    public function performMigration()
+    protected function performMigration()
     {
         $fullList = Config::inst()->get(self::class, 'items_to_migrate');
         foreach($fullList as $item => $details) {
             $this->flushNow( '<h2>Starting Migration for '.$item.'</h2>');
+
             $preSqlQueries = $details['pre_sql_queries'];
+            $this->runSQLQueries($preSqlQueries, 'PRE');
+
             $data = $details['data'];
+            $this->runMoveData($data);
+
             $publishClasses = $details['publish_classes'];
+            $this->runPublishClasses($publishClasses);
+
             $postSqlQueries = $details['post_sql_queries'];
+            $this->runSQLQueries($postSqlQueries, 'POST');
 
-            if ($preSqlQueries) {
-                $this->flushNow( '<h2>Performing PRE SQL Queries</h2>');
-                foreach ($preSqlQueries as $sqlQuery) {
-                    $this->flushNow($sqlQuery);
-                    try {
-                        $sqlResults = DB::query($sqlQuery);
-                        $this->flushNow('... DONE');
-                    } catch (Exception $e) {
-                        $this->flushNow( "Unable to run '$sqlQuery'");
-                        $this->flushNow( "" . $e->getMessage() . "");
-                    }
-                }
-            }
-
-            if ($data) {
-                $this->flushNow( '<h2>Migrating data</h2>');
-                foreach ($data as $dataItem) {
-                    $this->flushNow( '<h4>Migrating data '.$dataItem['old_table'].' to '.$dataItem['new_table'].'</h4>');
-                    $this->migrateSimple(
-                        $dataItem['old_table'],
-                        $dataItem['new_table'],
-                        $dataItem['old_fields'],
-                        $dataItem['new_fields']
-                    );
-                }
-            }
-
-            if ($publishClasses) {
-                $this->flushNow( '<h2>Publish classes</h2>');
-                foreach ($publishClasses as $publishClass) {
-                    $this->flushNow( '<h4>Publishing '.$publishClass.'</h4>' );
-                    try {
-                        $publishItems = $publishClass::get();
-                        foreach ($publishItems as $publishItem) {
-                            $publishItem->write();
-                            $publishItem->doPublish();
-                        }
-                        $this->flushNow(
-                            "Published " . $publishItems->count() .
-                            " " .
-                            $publishClass .
-                            " item" .
-                            ($publishItems->count() == 1 ? "" : "s") . "."
-                        );
-
-                    } catch (Exception $e) {
-                        $this->flushNow( "Unable to publish " . $publishClass . "", 'error');
-                        $this->flushNow( "" . $e->getMessage() . "", 'error');
-                    }
-                }
-            }
-
-            if ($postSqlQueries) {
-                $this->flushNow( '<h2>Performing POST SQL Queries</h2>' );
-                foreach ($postSqlQueries as $sqlQuery) {
-                    $this->flushNow($sqlQuery);
-                    try {
-                        $sqlResults = DB::query($sqlQuery);
-                        $this->flushNow('... DONE');
-
-                    } catch (Exception $e) {
-                        $this->flushNow( "Unable to run '$sqlQuery'");
-                        $this->flushNow( "" . $e->getMessage() . "");
-                    }
-                }
-            }
             $this->flushNow( '<h2>Finish Migration for '.$item.'</h2>' );
         }
 
     }
 
     /**
+     *
+     * @param  array $queries list of queries
+     * @param  string $name what is this list about?
+     */
+    protected function runSQLQueries($queries, $name = 'UPDATE QUERIES')
+    {
+
+        if ($queries) {
+            $this->flushNow( '<h2>Performing '.$name.' Queries</h2>');
+            foreach ($queries as $sqlQuery) {
+                $this->flushNow($sqlQuery);
+                try {
+                    $sqlResults = DB::query($sqlQuery);
+                    $this->flushNow('... DONE');
+                } catch (Exception $e) {
+                    $this->flushNow( "Unable to run '$sqlQuery'", 'error');
+                    $this->flushNow( "" . $e->getMessage() . "", 'error');
+                }
+            }
+        }
+    }
+
+    /**
+     * data needs to be in this format:
+     *      [
+     *          'include_inserts' => true|false, #assumed true if not provided
+     *          'old_table' => 'foo',
+     *          'new_table' => 'bar' (can be the same!)
+     *          'old_fields' => ['A', 'B', 'C']
+     *          'new_fields' => ['A', 'B', 'C2']
+     *      ]
+     * @param  array $data list of data that is going to be moved
+     * @return [type]       [description]
+     */
+    protected function runMoveData($data)
+    {
+        if ($data) {
+            $this->flushNow( '<h2>Migrating data</h2>');
+            foreach ($data as $dataItem) {
+                if(! isset($dataItem['include_inserts'])) {
+                    $dataItem['include_inserts'] = true;
+                }
+                if(! isset($dataItem['new_table'])) {
+                    $dataItem['new_table'] = $dataItem['old_table'];
+                }
+                if(! isset($dataItem['new_fields'])) {
+                    $dataItem['new_fields'] = $dataItem['old_fields'];
+                }
+                $this->flushNow( '<h4>Migrating data '.$dataItem['old_table'].' to '.$dataItem['new_table'].'</h4>');
+                $this->migrateSimple(
+                    $dataItem['include_inserts'],
+                    $dataItem['old_table'],
+                    $dataItem['new_table'],
+                    $dataItem['old_fields'],
+                    $dataItem['new_fields']
+                );
+            }
+        }
+
+    }
+
+    /**
+     *
+     * @param  array $publishClasses list of class names to write / publish
+     */
+    protected function runPublishClasses($publishClasses)
+    {
+
+        if ($publishClasses) {
+            $this->flushNow( '<h2>Publish classes</h2>');
+            foreach ($publishClasses as $publishClass) {
+                $this->flushNow( '<h4>Publishing '.$publishClass.'</h4>' );
+                try {
+                    $publishItems = $publishClass::get();
+                    foreach ($publishItems as $publishItem) {
+                        $this->flushNow(
+                            "Publishing " . $publishItems->count() .
+                            " " .
+                            $publishClass .
+                            " item" .
+                            ($publishItems->count() == 1 ? "" : "s") . "."
+                        );
+                        $publishItem->write();
+                        if($publishItem->hasMethod('doPublish')) {
+                            $publishItem->doPublish();
+                            $this->flushNow('... DONE - PUBLISHED');
+                        } else {
+                            $this->flushNow('... DONE - WRITE ONLY');
+                        }
+                    }
+
+                } catch (Exception $e) {
+                    $this->flushNow( "Unable to publish " . $publishClass . "", 'error');
+                    $this->flushNow( "" . $e->getMessage() . "", 'error');
+                }
+            }
+        }
+    }
+
+    /**
      * Migrates data from one table to another
      *
-     * @param String | $tableOld - the db table where we are moving fields from
-     * @param String | $tableNew - the db table where we are moving fields to
-     * @param String | $fieldNamesOld - The current field names
-     * @param String | $fieldNamesNew - The new field names (this may be the same as $fieldNameOld)
+     * @param bool | $includeInserts - the db table where we are moving fields from
+     * @param string | $tableOld - the db table where we are moving fields from
+     * @param string | $tableNew - the db table where we are moving fields to
+     * @param string | $fieldNamesOld - The current field names
+     * @param string | $fieldNamesNew - The new field names (this may be the same as $fieldNameOld)
      * @return string
      */
-    public function migrateSimple($tableOld, $tableNew, $fieldNamesOld, $fieldNamesNew)
+    public function migrateSimple($includeInserts, $tableOld, $tableNew, $fieldNamesOld, $fieldNamesNew)
     {
 
         if(! $this->tableExists($tableOld)) {
@@ -144,8 +189,6 @@ class MigrateDataTask extends BuildTask
         }
 
         try {
-            $count = 0;
-
             $newEntriesQuery = new SQLSelect();
             $newEntriesQuery->setFrom($tableNew);
             $newEntriesQuery->setOrderBy('ID');
@@ -160,12 +203,16 @@ class MigrateDataTask extends BuildTask
 
             //add a new line using the ID as identifier
             foreach ($oldEntries as $oldEntry) {
-                if (!in_array($oldEntry['ID'], $newEntryIDs)) {
-                    DB::query('INSERT INTO "' . $tableNew . '" ("ID") VALUES (' . $oldEntry['ID'] . ');');
-                    $this->flushNow( 'Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.' );
+                if($includeInserts) {
+                    if (! in_array($oldEntry['ID'], $newEntryIDs)) {
+                        DB::query('INSERT INTO "' . $tableNew . '" ("ID") VALUES (' . $oldEntry['ID'] . ');');
+                        $this->flushNow( 'Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.' );
+                    }
                 }
                 array_push($oldEntryIDs, $oldEntry['ID']);
             }
+
+            //update fields
             if(count($oldEntryIDs)) {
                 //update the new table with the old values
                 //for the rows that join with the ID and match the list of OLD ids.
@@ -184,14 +231,13 @@ class MigrateDataTask extends BuildTask
                     $updateQuery .=  '"tablenew"."' . $fieldNamesNew[$i] . '" = "tableold"."' . $fieldNamesOld[$i] . '" ';
                 }
                 $updateQuery .= 'WHERE "tablenew"."ID" IN (' . implode(', ', $oldEntryIDs) . ');';
+                $this->flushNow($updateQuery);
                 $sqlResults = DB::query($updateQuery);
+                $this->flushNow( "... DONE" );
             }
-
-            $this->flushNow( "... DONE" );
-
         } catch (Exception $e) {
-            $this->flushNow( "Unable to migrate $tableOld to $tableNew." );
-            $this->flushNow($e->getMessage());
+            $this->flushNow( "Unable to migrate $tableOld to $tableNew.", 'error');
+            $this->flushNow($e->getMessage(), 'error');
         }
 
     }
@@ -199,17 +245,45 @@ class MigrateDataTask extends BuildTask
 
     protected function tableExists($tableName) : bool
     {
-        $connection = DB::get_conn();
-        $database = $connection->getSelectedDatabase();
-        return DB::query('
-            SELECT COUNT("table_name")
-            FROM information_schema.tables
-            WHERE table_schema = \''.$database.'\'
-                AND table_name = \''.$tableName.'\'
-            LIMIT 1;'
-        )->value() ? true : false;
+        $schema = $this->getSchema();
+
+        return $schema->hasTable($tableName);
     }
 
+    protected function makeTableObsolete($tableName) : bool
+    {
+        $schema = $this->getSchema();
+        if($this->tableExists($tableName)) {
+            if(! $this->tableExists('_obsolete_'.$tableName)) {
+                $schema->dontRequireTable($tableName);
+                return true;
+            } else {
+                $this->flushNow('Table '.$tableName.' is already obsolete');
+            }
+        } else {
+            $this->flushNow('Table '.$tableName.' does not exist.');
+        }
+        return false;
+    }
+
+    protected function fieldExists($tableName, $fieldName) : bool
+    {
+        $schema = $this->getSchema();
+        $fieldList = $schema->fieldList($tableName);
+
+        return isset($fieldList[$fieldName]);
+    }
+
+    protected $_schema = null;
+
+    protected function getSchema()
+    {
+        if($this->_schema === null) {
+            $this->_schema = DB::get_schema();
+            $this->_schema->schemaUpdate(function() {return true;});
+        }
+        return $this->_schema;
+    }
 
     protected function flushNow($message, $type = '', $bullet = true)
     {
