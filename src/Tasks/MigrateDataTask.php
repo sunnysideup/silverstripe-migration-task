@@ -9,6 +9,7 @@ use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\Control\Director;
+use SilverStripe\Versioned\Versioned;
 
 class MigrateDataTask extends BuildTask
 {
@@ -151,8 +152,9 @@ class MigrateDataTask extends BuildTask
                             ($publishItems->count() == 1 ? "" : "s") . "."
                         );
                         $publishItem->write();
-                        if($publishItem->hasMethod('doPublish')) {
+                        if($publishItem->hasMethod('copyVersionToStage')) {
                             $publishItem->doPublish();
+                            $publishItem->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                             $this->flushNow('... DONE - PUBLISHED');
                         } else {
                             $this->flushNow('... DONE - WRITE ONLY');
@@ -166,6 +168,7 @@ class MigrateDataTask extends BuildTask
             }
         }
     }
+
 
     /**
      * Migrates data from one table to another
