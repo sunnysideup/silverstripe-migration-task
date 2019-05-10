@@ -97,8 +97,10 @@ class MigrateDataTask extends BuildTask
      *          'include_inserts' => true|false, #assumed true if not provided
      *          'old_table' => 'foo',
      *          'new_table' => 'bar' (can be the same!)
-     *          'old_fields' => ['A', 'B', 'C']
-     *          'new_fields' => ['A', 'B', 'C2']
+     *
+     *          'simple_move_fields' => ['A', 'B', 'C']
+     *          OR
+     *          'complex_move_fields' => ['A' => 'Anew', 'B' => 'BBew', 'C2' => 'Cnew']
      *      ]
      * @param  array $data list of data that is going to be moved
      * @return [type]       [description]
@@ -114,8 +116,17 @@ class MigrateDataTask extends BuildTask
                 if(! isset($dataItem['new_table'])) {
                     $dataItem['new_table'] = $dataItem['old_table'];
                 }
-                if(! isset($dataItem['new_fields'])) {
-                    $dataItem['new_fields'] = $dataItem['old_fields'];
+                $dataItem['old_fields'] = [];
+                $dataItem['new_fields'] = [];
+                if(isset($dataItem['simple_move_fields'])) {
+                    $dataItem['old_fields'] = $dataItem['simple_move_fields'];
+                    $dataItem['new_fields'] = $dataItem['simple_move_fields'];
+                }
+                elseif(isset($dataItem['complex_move_fields'])) {
+                    $dataItem['old_fields'] = array_keys($dataItem['complex_move_fields']);
+                    $dataItem['new_fields'] = $dataItem['complex_move_fields'];
+                } else {
+                    $this->flushNow('Could not find simple_move_fields or complex_move_fields.');
                 }
                 $this->flushNow( '<h4>Migrating data '.$dataItem['old_table'].' to '.$dataItem['new_table'].'</h4>');
                 $this->migrateSimple(
@@ -219,24 +230,26 @@ class MigrateDataTask extends BuildTask
             if(count($oldEntryIDs)) {
                 //update the new table with the old values
                 //for the rows that join with the ID and match the list of OLD ids.
-                $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
-                $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
-                if(substr($tableNew, -9) == '_versions') {
-                    $updateQuery .= ' AND "tablenew"."RecordID" = "tableold"."RecordID" ';
-                    // also link to RecordID ...
-                }
-                $updateQuery .= 'SET ';
-
-                for ($i = 0; $i < count($fieldNamesNew) && $i < count($fieldNamesOld); $i++) {
-                    if ($i > 0) {
-                        $updateQuery .= ', ';
+                if(count($fieldNamesNew)) {
+                    $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
+                    $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
+                    if(substr($tableNew, -9) == '_versions') {
+                        $updateQuery .= ' AND "tablenew"."RecordID" = "tableold"."RecordID" ';
+                        // also link to RecordID ...
                     }
-                    $updateQuery .=  '"tablenew"."' . $fieldNamesNew[$i] . '" = "tableold"."' . $fieldNamesOld[$i] . '" ';
+                    $updateQuery .= 'SET ';
+
+                    for ($i = 0; $i < count($fieldNamesNew) && $i < count($fieldNamesOld); $i++) {
+                        if ($i > 0) {
+                            $updateQuery .= ', ';
+                        }
+                        $updateQuery .=  '"tablenew"."' . $fieldNamesNew[$i] . '" = "tableold"."' . $fieldNamesOld[$i] . '" ';
+                    }
+                    $updateQuery .= 'WHERE "tablenew"."ID" IN (' . implode(', ', $oldEntryIDs) . ');';
+                    $this->flushNow($updateQuery);
+                    $sqlResults = DB::query($updateQuery);
+                    $this->flushNow( "... DONE" );
                 }
-                $updateQuery .= 'WHERE "tablenew"."ID" IN (' . implode(', ', $oldEntryIDs) . ');';
-                $this->flushNow($updateQuery);
-                $sqlResults = DB::query($updateQuery);
-                $this->flushNow( "... DONE" );
             }
         } catch (Exception $e) {
             $this->flushNow( "Unable to migrate $tableOld to $tableNew.", 'error');
