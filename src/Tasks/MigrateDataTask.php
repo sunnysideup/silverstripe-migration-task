@@ -28,7 +28,7 @@ class MigrateDataTask extends BuildTask
         $this->flushNow('-----------------------------');
 
         DataObject::Config()->set('validation_enabled', false);
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '1024M');
         Environment::increaseMemoryLimitTo();
         Environment::increaseTimeLimitTo(7200);
 
@@ -82,7 +82,7 @@ class MigrateDataTask extends BuildTask
                 $this->flushNow($sqlQuery);
                 try {
                     $sqlResults = DB::query($sqlQuery);
-                    $this->flushNow('... DONE');
+                    $this->flushNow('... DONE '.DB::affected_rows().' rows affected' );
                 } catch (Exception $e) {
                     $this->flushNow( "Unable to run '$sqlQuery'", 'error');
                     $this->flushNow( "" . $e->getMessage() . "", 'error');
@@ -124,9 +124,22 @@ class MigrateDataTask extends BuildTask
                 }
                 elseif(isset($dataItem['complex_move_fields'])) {
                     $dataItem['old_fields'] = array_keys($dataItem['complex_move_fields']);
-                    $dataItem['new_fields'] = $dataItem['complex_move_fields'];
+                    $dataItem['new_fields'] = array_values($dataItem['complex_move_fields']);
                 } else {
                     $this->flushNow('Could not find simple_move_fields or complex_move_fields.');
+                }
+                if(count($dataItem['new_fields']) !== count($dataItem['old_fields'])){
+                    user_error('Count of new fields does not match old fields');
+                    foreach($dataItem['old_fields'] as $key => $value) {
+                        if(intval($value) == $value) {
+                            $this->flushNow('Potential error in fields: '.print_r($dataItem['old_fields'], 1), 'error');
+                        }
+                    }
+                    foreach($dataItem['new_fields'] as $key => $value) {
+                        if(intval($value) == $value) {
+                            $this->flushNow('Potential error in fields: '.print_r($dataItem['new_fields'], 1), 'error');
+                        }
+                    }
                 }
                 $this->flushNow( '<h4>Migrating data '.$dataItem['old_table'].' to '.$dataItem['new_table'].'</h4>');
                 $this->migrateSimple(
@@ -203,31 +216,47 @@ class MigrateDataTask extends BuildTask
         }
 
         try {
-            $newEntriesQuery = new SQLSelect();
-            $newEntriesQuery->setFrom($tableNew);
-            $newEntriesQuery->setOrderBy('ID');
-            $newEntries = $newEntriesQuery->execute();
-            $newEntryIDs = $newEntries->keyedColumn('ID');
+            $this->flushNow('getting new table IDs.');
+            $newEntryIDs = $this->getListOfIDs($tableNew);
 
-            $oldEntriesQuery = new SQLSelect();
-            $oldEntriesQuery->setFrom($tableOld);
-            $oldEntriesQuery->setOrderBy('ID');
-            $oldEntries = $oldEntriesQuery->execute();
+            $this->flushNow('getting old IDs.');
+            $oldEntries = $this->getListAsIterableQuery($tableOld);
             $oldEntryIDs = [];
 
             //add a new line using the ID as identifier
             foreach ($oldEntries as $oldEntry) {
                 if($includeInserts) {
                     if (! in_array($oldEntry['ID'], $newEntryIDs)) {
-                        DB::query('INSERT INTO "' . $tableNew . '" ("ID") VALUES (' . $oldEntry['ID'] . ');');
                         $this->flushNow( 'Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.' );
+                        DB::query('INSERT INTO "' . $tableNew . '" ("ID") VALUES (' . $oldEntry['ID'] . ');');
+                        $this->flushNow('... DONE '.DB::affected_rows().' rows affected' );
                     }
                 }
+
                 array_push($oldEntryIDs, $oldEntry['ID']);
             }
 
             //update fields
             if(count($oldEntryIDs)) {
+
+                //work out what option is shorter in terms of ID count:
+                $this->flushNow('working out update SQL..');
+                $allIDs = $this->getListOfIDs($tableNew);
+                $allIDCount = count($allIDs);
+                $oldIDCount = count($oldEntryIDs);
+                if($oldIDCount > ($allIDCount - $oldIDCount)) {
+                    $excludeIDs = array_diff($allIDs, $oldEntryIDs);
+                    if(count($excludeIDs) === 0) {
+                        $excludeIDs = [0];
+                    }
+                    $wherePhrase = ' NOT IN (' . implode(', ', $excludeIDs) . ')';
+                } else {
+                    if(count($oldEntryIDs) === 0) {
+                        $oldEntryIDs = [0];
+                    }
+                    $wherePhrase = ' IN (' . implode(', ', $oldEntryIDs) . ')';
+                }
+
                 //update the new table with the old values
                 //for the rows that join with the ID and match the list of OLD ids.
                 if(count($fieldNamesNew)) {
@@ -245,10 +274,10 @@ class MigrateDataTask extends BuildTask
                         }
                         $updateQuery .=  '"tablenew"."' . $fieldNamesNew[$i] . '" = "tableold"."' . $fieldNamesOld[$i] . '" ';
                     }
-                    $updateQuery .= 'WHERE "tablenew"."ID" IN (' . implode(', ', $oldEntryIDs) . ');';
-                    $this->flushNow($updateQuery);
+                    $updateQuery .= 'WHERE "tablenew"."ID" '.$wherePhrase.';';
+                    $this->flushNow(str_replace($wherePhrase, '........', $updateQuery));
                     $sqlResults = DB::query($updateQuery);
-                    $this->flushNow( "... DONE" );
+                    $this->flushNow('... DONE '.DB::affected_rows().' rows affected' );
                 }
             }
         } catch (Exception $e) {
@@ -320,5 +349,22 @@ class MigrateDataTask extends BuildTask
             echo $message;
         }
     }
+
+    protected function getListOfIDs($tableName)
+    {
+        return $this->getListAsIterableQuery($tableName)
+            ->keyedColumn('ID');
+    }
+
+    protected function getListAsIterableQuery($tableName)
+    {
+        $sqlSelect = new SQLSelect();
+        $sqlSelect->setFrom($tableName);
+        $sqlSelect->setOrderBy('ID');
+        $sqlQuery = $sqlSelect->execute();
+
+        return $sqlQuery;
+    }
+
 
 }
