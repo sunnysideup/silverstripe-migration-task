@@ -290,13 +290,6 @@ class MigrateDataTask extends BuildTask
     }
 
 
-    protected function tableExists($tableName) : bool
-    {
-        $schema = $this->getSchema();
-
-        return $schema->hasTable($tableName);
-    }
-
     protected function makeTableObsolete($tableName) : bool
     {
         $schema = $this->getSchema();
@@ -313,12 +306,34 @@ class MigrateDataTask extends BuildTask
         return false;
     }
 
+
+    private $_cacheTableExists = [];
+
+
+    protected function tableExists($tableName) : bool
+    {
+        if(! isset($this->_cacheTableExists[$tableName])) {
+            $schema = $this->getSchema();
+            $this->_cacheTableExists[$tableName] = $schema->hasTable($tableName);
+        }
+
+        return $this->_cacheTableExists[$tableName];
+    }
+
+
+    private $_cacheFieldExists = [];
+
     protected function fieldExists($tableName, $fieldName) : bool
     {
-        $schema = $this->getSchema();
-        $fieldList = $schema->fieldList($tableName);
+        $key = $tableName.'_'.$fieldName;
+        if(! isset($this->_cacheFieldExists[$key])) {
+            $schema = $this->getSchema();
+            $fieldList = $schema->fieldList($tableName);
 
-        return isset($fieldList[$fieldName]);
+            $this->_cacheFieldExists[$key] = isset($fieldList[$fieldName]);
+        }
+
+        return $this->_cacheFieldExists[$key];
     }
 
     protected $_schema = null;
@@ -331,6 +346,24 @@ class MigrateDataTask extends BuildTask
         }
         return $this->_schema;
     }
+
+    protected function getListOfIDs($tableName)
+    {
+        return $this->getListAsIterableQuery($tableName)
+            ->keyedColumn('ID');
+    }
+
+    protected function getListAsIterableQuery($tableName)
+    {
+        $sqlSelect = new SQLSelect();
+        $sqlSelect->setFrom($tableName);
+        $sqlSelect->setOrderBy('ID');
+        $sqlQuery = $sqlSelect->execute();
+
+        return $sqlQuery;
+    }
+
+
 
     protected function flushNow($message, $type = '', $bullet = true)
     {
@@ -351,22 +384,5 @@ class MigrateDataTask extends BuildTask
             echo $message;
         }
     }
-
-    protected function getListOfIDs($tableName)
-    {
-        return $this->getListAsIterableQuery($tableName)
-            ->keyedColumn('ID');
-    }
-
-    protected function getListAsIterableQuery($tableName)
-    {
-        $sqlSelect = new SQLSelect();
-        $sqlSelect->setFrom($tableName);
-        $sqlSelect->setOrderBy('ID');
-        $sqlQuery = $sqlSelect->execute();
-
-        return $sqlQuery;
-    }
-
 
 }
