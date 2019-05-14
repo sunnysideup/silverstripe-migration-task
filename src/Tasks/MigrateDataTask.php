@@ -166,10 +166,12 @@ class MigrateDataTask extends BuildTask
             foreach ($publishClasses as $publishClass) {
                 $this->flushNow( '<h4>Publishing '.$publishClass.'</h4>' );
                 try {
+                    $count = 0;
                     $publishItems = $publishClass::get();
                     foreach ($publishItems as $publishItem) {
+                        $count++;
                         $this->flushNow(
-                            "Publishing " . $publishItems->count() .
+                            "Publishing " .$count.' of '. $publishItems->count() .
                             " " .
                             $publishClass .
                             " item" .
