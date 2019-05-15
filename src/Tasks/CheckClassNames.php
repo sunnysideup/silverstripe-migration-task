@@ -34,16 +34,8 @@ class CheckClassNames extends MigrateDataTask
 
     protected $dataObjectSchema = null;
 
-    public function run($request)
+    protected function performMigration($request)
     {
-        $this->flushNow('-----------------------------');
-        $this->flushNow('THE START - look out for THE END ...');
-        $this->flushNow('-----------------------------');
-
-        DataObject::Config()->set('validation_enabled', false);
-        ini_set('memory_limit', '1024M');
-        Environment::increaseMemoryLimitTo();
-        Environment::increaseTimeLimitTo(7200);
 
         $this->dataObjectSchema = Injector::inst()->get(DataObjectSchema::class);
 
@@ -102,9 +94,6 @@ class CheckClassNames extends MigrateDataTask
             }
         }
 
-        $this->flushNow('-----------------------------');
-        $this->flushNow('THE END');
-        $this->flushNow('-----------------------------');
     }
 
 
