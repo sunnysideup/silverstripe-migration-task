@@ -62,6 +62,5 @@ class PublishAllFiles extends MigrateDataTask
             $file->destroy();
         }
 
-        exit('Done!');
     }
 }
