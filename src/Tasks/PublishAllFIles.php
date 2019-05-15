@@ -35,10 +35,13 @@ class PublishAllFiles extends MigrateDataTask
             $name = $file->getFilename();
             $originalDir = BASE_PATH . '/'.Director::publicDir().'/assets/';
 
-            if(!$file->getField('FileHash') && file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
-
-                $hash = sha1_file($originalDir.$name);
-                DB::query('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
+            if(file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
+                if(!$file->getField('FileHash')) {
+                    $hash = sha1_file($originalDir.$name);
+                    DB::query('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
+                } else {
+                    $hash = $file->FileHash;
+                }
 
                 $targetDir = str_replace('./','',BASE_PATH . '/' . Director::publicDir() . '/assets/.protected/'. dirname($name)
                     .'/'. substr($hash, 0, 10) . '/');
