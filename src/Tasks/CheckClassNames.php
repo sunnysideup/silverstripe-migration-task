@@ -34,7 +34,7 @@ class CheckClassNames extends MigrateDataTask
 
     protected $dataObjectSchema = null;
 
-    protected function performMigration($request)
+    protected function performMigration()
     {
 
         $this->dataObjectSchema = Injector::inst()->get(DataObjectSchema::class);
