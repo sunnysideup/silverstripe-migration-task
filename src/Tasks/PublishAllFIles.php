@@ -43,9 +43,12 @@ class PublishAllFiles extends MigrateDataTask
                     $hash = $file->FileHash;
                 }
 
-                $targetDir = str_replace('./','',BASE_PATH . '/' . Director::publicDir() . '/assets/.protected/'. dirname($name)
-                    .'/'. substr($hash, 0, 10) . '/');
-
+                $targetDir = str_replace(
+                    './',
+                    '',
+                    BASE_PATH . '/' . Director::publicDir() . '/assets/.protected/'. dirname($name)
+                        .'/'. substr($hash, 0, 10) . '/'
+                );
 
 
                 if(!file_exists($targetDir)) {
