@@ -138,7 +138,7 @@ class CheckClassNames extends MigrateDataTask
                     if($this->countsOfAllClasses[$row['ClassName']] === 1) {
                         $longNameAlreadySlashed = array_search($row['ClassName'], $this->listOfAllClasses);
                         if($longNameAlreadySlashed) {
-                            $this->flushNow('... ... ... Updating '.$row['ClassName'].' to '.$longName.' - based in short to long ClassName mapping', 'created');
+                            $this->flushNow('... ... ... Updating '.$row['ClassName'].' to '.$longNameAlreadySlashed.' - based in short to long ClassName mapping', 'created');
                             if($this->forReal) {
                                 DB::query('
                                     UPDATE "'.$tableName.'"

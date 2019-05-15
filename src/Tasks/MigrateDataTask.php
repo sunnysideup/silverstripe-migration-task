@@ -309,8 +309,7 @@ class MigrateDataTask extends BuildTask
 
     private $_cacheTableExists = [];
 
-
-    protected function tableExists($tableName) : bool
+    public function tableExists($tableName) : bool
     {
         if(! isset($this->_cacheTableExists[$tableName])) {
             $schema = $this->getSchema();
@@ -323,7 +322,7 @@ class MigrateDataTask extends BuildTask
 
     private $_cacheFieldExists = [];
 
-    protected function fieldExists($tableName, $fieldName) : bool
+    public function fieldExists($tableName, $fieldName) : bool
     {
         $key = $tableName.'_'.$fieldName;
         if(! isset($this->_cacheFieldExists[$key])) {
