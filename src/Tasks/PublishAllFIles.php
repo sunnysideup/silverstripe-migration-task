@@ -30,7 +30,6 @@ class PublishAllFiles extends MigrateDataTask
 
         // Execute and return a Query object
         $result = $sqlQuery->execute();
-        die(ASSETS_PATH);
         foreach ($result as $row) {
             $file = File::get()->byID($row['ID']);
             $name = $file->getFilename();
@@ -59,11 +58,15 @@ class PublishAllFiles extends MigrateDataTask
                         mkdir($targetDir, 0755, true);
                     }
 
-                    rename($originalDir . $name, $targetDir . basename($name));
-
-
                     $this->flushNow($originalDir . $name .' > '. $targetDir . basename($name), 'obsolete');
-                }else{
+
+                    rename(
+                        $originalDir . $name,
+                        $targetDir . basename($name)
+                    );
+
+
+                } else {
                     $this->flushNow('Publishing: '.$name, 'created');
                     $admin->generateThumbnails($file);
                     $file->copyVersionToStage('Stage', 'Live');
