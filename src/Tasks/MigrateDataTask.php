@@ -51,17 +51,25 @@ class MigrateDataTask extends BuildTask
         foreach($fullList as $item => $details) {
             $this->flushNow( '<h2>Starting Migration for '.$item.'</h2>');
 
-            $preSqlQueries = $details['pre_sql_queries'];
-            $this->runSQLQueries($preSqlQueries, 'PRE');
+            if(isset($details['pre_sql_queries'])) {
+                $preSqlQueries = $details['pre_sql_queries'];
+                $this->runSQLQueries($preSqlQueries, 'PRE');
+            }
 
-            $data = $details['data'];
-            $this->runMoveData($data);
+            if(isset($details['data'])) {
+                $data = $details['data'];
+                $this->runMoveData($data);
+            }
 
-            $publishClasses = $details['publish_classes'];
-            $this->runPublishClasses($publishClasses);
+            if(isset($details['publish_classes'])) {
+                $publishClasses = $details['publish_classes'];
+                $this->runPublishClasses($publishClasses);
+            }
 
-            $postSqlQueries = $details['post_sql_queries'];
-            $this->runSQLQueries($postSqlQueries, 'POST');
+            if(isset($details['post_sql_queries'])) {
+                $postSqlQueries = $details['post_sql_queries'];
+                $this->runSQLQueries($postSqlQueries, 'POST');
+            }
 
             $this->flushNow( '<h2>Finish Migration for '.$item.'</h2>' );
         }
