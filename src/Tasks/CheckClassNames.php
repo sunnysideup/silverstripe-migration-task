@@ -90,7 +90,9 @@ class CheckClassNames extends MigrateDataTask
                 $this->flushNow('... No table needed');
             }
             if($allOK) {
-                $this->flushNow('... OK');
+                $this->flushNow('... OK', 'created');
+            } else {
+                $this->flushNow('... ERRORS', 'error');
             }
         }
 
@@ -201,16 +203,17 @@ class CheckClassNames extends MigrateDataTask
                     }
                 }
             }
-            //run again ...
-            if($fake === false) {
-                if($this->tableExists($tableName.'_Versions')) {
-                    $this->fixingClassNames($tableName.'_Versions', $objectClassName, true);
-                }
-                if($this->tableExists($tableName.'_Live')) {
-                    $this->fixingClassNames($tableName.'_Live', $objectClassName, true);
+        }
+        //run again ...
+        if($fake === false) {
+            foreach(['_Live', '_Versions'] as $extension) {
+                $testTable = $tableName.$extension;
+                if($this->tableExists($testTable)) {
+                    $this->fixingClassNames($testTable, $objectClassName, true);
+                } else {
+                    $this->flushNow('... ... Could not find: '.$testTable);
                 }
             }
-
         }
     }
 

@@ -10,6 +10,7 @@ use SilverStripe\Core\Environment;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\Control\Director;
 use SilverStripe\Versioned\Versioned;
+use SilverStripe\View\Requirements;
 
 class MigrateDataTask extends BuildTask
 {
@@ -26,7 +27,10 @@ class MigrateDataTask extends BuildTask
         $this->flushNow('-----------------------------');
         $this->flushNow('THE START - look out for THE END ...');
         $this->flushNow('-----------------------------');
-
+        echo '
+            <link href="/resources/vendor/silverstripe/framework/client/styles/debug.css" rel="stylesheet">
+            <ul class="build">
+        ';
         DataObject::Config()->set('validation_enabled', false);
         ini_set('memory_limit', '1024M');
         Environment::increaseMemoryLimitTo();
@@ -34,6 +38,7 @@ class MigrateDataTask extends BuildTask
 
         $this->performMigration();
 
+        echo '</ul>';
         $this->flushNow('-----------------------------');
         $this->flushNow('THE END');
         $this->flushNow('-----------------------------');
@@ -321,7 +326,11 @@ class MigrateDataTask extends BuildTask
     {
         if(! isset($this->_cacheTableExists[$tableName])) {
             $schema = $this->getSchema();
-            $this->_cacheTableExists[$tableName] = $schema->hasTable($tableName);
+            if($this->_cacheTableExists[$tableName] = $schema->hasTable($tableName)) {
+                return true;
+            } else {
+
+            }
         }
 
         return $this->_cacheTableExists[$tableName];
