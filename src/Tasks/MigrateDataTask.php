@@ -90,7 +90,7 @@ class MigrateDataTask extends BuildTask
     {
 
         if ($queries) {
-            $this->flushNow( '<h2>Performing '.$name.' Queries</h2>');
+            $this->flushNow( '<h3>Performing '.$name.' Queries</h3>');
             foreach ($queries as $sqlQuery) {
                 $this->flushNow($sqlQuery);
                 try {
@@ -121,7 +121,7 @@ class MigrateDataTask extends BuildTask
     protected function runMoveData($data)
     {
         if ($data) {
-            $this->flushNow( '<h2>Migrating data</h2>');
+            $this->flushNow( '<h3>Migrating data - Core Migration</h3>');
             foreach ($data as $dataItem) {
                 if(! isset($dataItem['include_inserts'])) {
                     $dataItem['include_inserts'] = true;
@@ -154,7 +154,7 @@ class MigrateDataTask extends BuildTask
                         }
                     }
                 }
-                $this->flushNow( '<h4>Migrating data '.$dataItem['old_table'].' to '.$dataItem['new_table'].'</h4>');
+                $this->flushNow( '<h6>Migrating data '.$dataItem['old_table'].' to '.$dataItem['new_table'].'</h6>');
                 $this->migrateSimple(
                     $dataItem['include_inserts'],
                     $dataItem['old_table'],
@@ -175,9 +175,9 @@ class MigrateDataTask extends BuildTask
     {
 
         if ($publishClasses) {
-            $this->flushNow( '<h2>Publish classes</h2>');
+            $this->flushNow( '<h3>Publish classes</h3>');
             foreach ($publishClasses as $publishClass) {
-                $this->flushNow( '<h4>Publishing '.$publishClass.'</h4>' );
+                $this->flushNow( '<h6>Publishing '.$publishClass.'</h6>' );
                 try {
                     $count = 0;
                     $publishItems = $publishClass::get();
