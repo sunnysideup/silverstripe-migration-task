@@ -98,6 +98,7 @@ class CheckClassNames extends MigrateDataTask
 
 
     protected function fixingClassNames($tableName, $objectClassName, $fake = false) {
+        $this->flushNow('... '.$tableName.' TEST ...');
         $count = DB::query('SELECT COUNT("ID") FROM "'.$tableName.'"')->value();
         $where = '"ClassName" NOT IN (\''.implode("', '", array_keys($this->listOfAllClasses) ).'\')';
         $whereA = $where." AND ( \"ClassName\" IS NULL OR ClassName = '' )";
