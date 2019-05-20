@@ -69,7 +69,7 @@ class PublishAllFiles extends MigrateDataTask
                 } else {
                     $this->flushNow('Publishing: '.$name, 'created');
                     $admin->generateThumbnails($file);
-                    $file->copyVersionToStage('Stage', 'Live');
+                    $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                 }
             }
 
