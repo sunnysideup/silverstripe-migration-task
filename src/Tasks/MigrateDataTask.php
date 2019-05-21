@@ -380,6 +380,13 @@ class MigrateDataTask extends BuildTask
     }
 
 
+    /**
+     * Show a message about task currently running
+     *
+     * @param string $message to display
+     * @param string $type one of [created|changed|repaired|obsolete|deleted|error]
+     * @param boolean $bullet is this a list item or regular mesage?
+    */
 
     protected function flushNow($message, $type = '', $bullet = true)
     {
