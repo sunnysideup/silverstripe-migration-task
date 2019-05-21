@@ -34,45 +34,54 @@ class PublishAllFiles extends MigrateDataTask
         foreach ($result as $row) {
             $file = File::get()->byID($row['ID']);
             $name = $file->getFilename();
+            if(! $name) {
+                $file->write();
+                $name = $file->getFilename();
+            }
             if($file instanceof Folder) {
                 $this->flushNow('Skipping Folder: '.$name);
             } else {
-                $originalDir = ASSETS_PATH.'/';
+                if($name) {
+                    $originalDir = ASSETS_PATH.'/';
 
-                if(file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
-                    if(!$file->getField('FileHash')) {
-                        $hash = sha1_file($originalDir.$name);
-                        DB::query('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
+                    if(file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
+                        if(!$file->getField('FileHash')) {
+                            $hash = sha1_file($originalDir.$name);
+                            DB::query('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
+                        } else {
+                            $hash = $file->FileHash;
+                        }
+
+                        $targetDir = str_replace(
+                            './',
+                            '',
+                            ASSETS_PATH .'/.protected/'. dirname($name)
+                                .'/'. substr($hash, 0, 10) . '/'
+                        );
+
+
+                        if(!file_exists($targetDir)) {
+                            mkdir($targetDir, 0755, true);
+                        }
+
+                        $this->flushNow($originalDir . $name .' > '. $targetDir . basename($name), 'obsolete');
+
+                        rename(
+                            $originalDir . $name,
+                            $targetDir . basename($name)
+                        );
+
+
                     } else {
-                        $hash = $file->FileHash;
+                        $this->flushNow('Publishing: '.$name, 'created');
+                        $admin->generateThumbnails($file);
+                        $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                     }
-
-                    $targetDir = str_replace(
-                        './',
-                        '',
-                        ASSETS_PATH .'/.protected/'. dirname($name)
-                            .'/'. substr($hash, 0, 10) . '/'
-                    );
-
-
-                    if(!file_exists($targetDir)) {
-                        mkdir($targetDir, 0755, true);
-                    }
-
-                    $this->flushNow($originalDir . $name .' > '. $targetDir . basename($name), 'obsolete');
-
-                    rename(
-                        $originalDir . $name,
-                        $targetDir . basename($name)
-                    );
-
-
                 } else {
-                    $this->flushNow('Publishing: '.$name, 'created');
-                    $admin->generateThumbnails($file);
-                    $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+                    $this->flushNow('Error in finding name for '.print_r($file->toMap(), 1));
                 }
             }
+
 
             $file->destroy();
         }
