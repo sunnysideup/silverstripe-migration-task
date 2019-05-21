@@ -46,9 +46,8 @@ class MigrateDataTask extends BuildTask
 
     /**
      * Queries the config for Migrate definitions, and runs migrations
+     * if you extend this task then overwrite it this method
      *
-     *
-     * @return string
      */
     protected function performMigration()
     {
@@ -219,7 +218,7 @@ class MigrateDataTask extends BuildTask
      * @param string | $fieldNamesNew - The new field names (this may be the same as $fieldNameOld)
      * @return string
      */
-    public function migrateSimple($includeInserts, $tableOld, $tableNew, $fieldNamesOld, $fieldNamesNew)
+    protected function migrateSimple($includeInserts, $tableOld, $tableNew, $fieldNamesOld, $fieldNamesNew)
     {
 
         if(! $this->tableExists($tableOld)) {
@@ -322,7 +321,7 @@ class MigrateDataTask extends BuildTask
 
     private $_cacheTableExists = [];
 
-    public function tableExists($tableName) : bool
+    protected function tableExists($tableName) : bool
     {
         if(! isset($this->_cacheTableExists[$tableName])) {
             $schema = $this->getSchema();
@@ -339,7 +338,7 @@ class MigrateDataTask extends BuildTask
 
     private $_cacheFieldExists = [];
 
-    public function fieldExists($tableName, $fieldName) : bool
+    protected function fieldExists($tableName, $fieldName) : bool
     {
         $key = $tableName.'_'.$fieldName;
         if(! isset($this->_cacheFieldExists[$key])) {
@@ -350,6 +349,11 @@ class MigrateDataTask extends BuildTask
         }
 
         return $this->_cacheFieldExists[$key];
+    }
+
+    protected function renameField($table, $oldFieldName, $newFieldName)
+    {
+        $this->getSchema()->renameField($table, $oldFieldName, $newFieldName);
     }
 
     protected $_schema = null;
@@ -385,9 +389,9 @@ class MigrateDataTask extends BuildTask
      *
      * @param string $message to display
      * @param string $type one of [created|changed|repaired|obsolete|deleted|error]
-     * @param boolean $bullet is this a list item or regular mesage?
-    */
-
+     * @param boolean $bullet add a bullet to message?
+     *
+     **/
     protected function flushNow($message, $type = '', $bullet = true)
     {
         echo '';
