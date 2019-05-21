@@ -10,6 +10,7 @@ use SilverStripe\Assets\Folder;
 use SilverStripe\AssetAdmin\Controller\AssetAdmin;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
+use SilverStripe\Versioned\Versioned;
 
 class PublishAllFiles extends MigrateDataTask
 {
