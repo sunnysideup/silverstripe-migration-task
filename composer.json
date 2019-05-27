@@ -28,6 +28,11 @@
     "extra": {
         "expose": [
             "client"
-        ]
+        ],
+        "autoload": {
+            "psr-4": {
+                "Sunnysideup\\MigrateData\\": "src/"
+            }
+        }
     }
 }
