@@ -52,32 +52,31 @@ class MigrateDataTask extends BuildTask
     protected function performMigration()
     {
         $fullList = Config::inst()->get(self::class, 'items_to_migrate');
-        foreach($fullList as $item => $details) {
-            $this->flushNow( '<h2>Starting Migration for '.$item.'</h2>');
+        foreach ($fullList as $item => $details) {
+            $this->flushNow('<h2>Starting Migration for '.$item.'</h2>');
 
-            if(isset($details['pre_sql_queries'])) {
+            if (isset($details['pre_sql_queries'])) {
                 $preSqlQueries = $details['pre_sql_queries'];
                 $this->runSQLQueries($preSqlQueries, 'PRE');
             }
 
-            if(isset($details['data'])) {
+            if (isset($details['data'])) {
                 $data = $details['data'];
                 $this->runMoveData($data);
             }
 
-            if(isset($details['publish_classes'])) {
+            if (isset($details['publish_classes'])) {
                 $publishClasses = $details['publish_classes'];
                 $this->runPublishClasses($publishClasses);
             }
 
-            if(isset($details['post_sql_queries'])) {
+            if (isset($details['post_sql_queries'])) {
                 $postSqlQueries = $details['post_sql_queries'];
                 $this->runSQLQueries($postSqlQueries, 'POST');
             }
 
-            $this->flushNow( '<h2>Finish Migration for '.$item.'</h2>' );
+            $this->flushNow('<h2>Finish Migration for '.$item.'</h2>');
         }
-
     }
 
     /**
@@ -89,15 +88,15 @@ class MigrateDataTask extends BuildTask
     {
 
         if ($queries) {
-            $this->flushNow( '<h3>Performing '.$name.' Queries</h3>');
+            $this->flushNow('<h3>Performing '.$name.' Queries</h3>');
             foreach ($queries as $sqlQuery) {
                 $this->flushNow($sqlQuery);
                 try {
                     $sqlResults = DB::query($sqlQuery);
-                    $this->flushNow('... DONE '.DB::affected_rows().' rows affected' );
+                    $this->flushNow('... DONE '.DB::affected_rows().' rows affected');
                 } catch (Exception $e) {
-                    $this->flushNow( "Unable to run '$sqlQuery'", 'error');
-                    $this->flushNow( "" . $e->getMessage() . "", 'error');
+                    $this->flushNow("Unable to run '$sqlQuery'", 'error');
+                    $this->flushNow("" . $e->getMessage() . "", 'error');
                 }
             }
         }
@@ -120,40 +119,39 @@ class MigrateDataTask extends BuildTask
     protected function runMoveData($data)
     {
         if ($data) {
-            $this->flushNow( '<h3>Migrating data - Core Migration</h3>');
+            $this->flushNow('<h3>Migrating data - Core Migration</h3>');
             foreach ($data as $dataItem) {
-                if(! isset($dataItem['include_inserts'])) {
+                if (! isset($dataItem['include_inserts'])) {
                     $dataItem['include_inserts'] = true;
                 }
-                if(! isset($dataItem['new_table'])) {
+                if (! isset($dataItem['new_table'])) {
                     $dataItem['new_table'] = $dataItem['old_table'];
                 }
                 $dataItem['old_fields'] = [];
                 $dataItem['new_fields'] = [];
-                if(isset($dataItem['simple_move_fields'])) {
+                if (isset($dataItem['simple_move_fields'])) {
                     $dataItem['old_fields'] = $dataItem['simple_move_fields'];
                     $dataItem['new_fields'] = $dataItem['simple_move_fields'];
-                }
-                elseif(isset($dataItem['complex_move_fields'])) {
+                } elseif (isset($dataItem['complex_move_fields'])) {
                     $dataItem['old_fields'] = array_keys($dataItem['complex_move_fields']);
                     $dataItem['new_fields'] = array_values($dataItem['complex_move_fields']);
                 } else {
                     $this->flushNow('Could not find simple_move_fields or complex_move_fields.');
                 }
-                if(count($dataItem['new_fields']) !== count($dataItem['old_fields'])){
+                if (count($dataItem['new_fields']) !== count($dataItem['old_fields'])) {
                     user_error('Count of new fields does not match old fields');
-                    foreach($dataItem['old_fields'] as $key => $value) {
-                        if(intval($value) == $value) {
+                    foreach ($dataItem['old_fields'] as $key => $value) {
+                        if (intval($value) == $value) {
                             $this->flushNow('Potential error in fields: '.print_r($dataItem['old_fields'], 1), 'error');
                         }
                     }
-                    foreach($dataItem['new_fields'] as $key => $value) {
-                        if(intval($value) == $value) {
+                    foreach ($dataItem['new_fields'] as $key => $value) {
+                        if (intval($value) == $value) {
                             $this->flushNow('Potential error in fields: '.print_r($dataItem['new_fields'], 1), 'error');
                         }
                     }
                 }
-                $this->flushNow( '<h6>Migrating data '.$dataItem['old_table'].' to '.$dataItem['new_table'].'</h6>');
+                $this->flushNow('<h6>Migrating data '.$dataItem['old_table'].' to '.$dataItem['new_table'].'</h6>');
                 $this->migrateSimple(
                     $dataItem['include_inserts'],
                     $dataItem['old_table'],
@@ -163,7 +161,6 @@ class MigrateDataTask extends BuildTask
                 );
             }
         }
-
     }
 
     /**
@@ -174,9 +171,9 @@ class MigrateDataTask extends BuildTask
     {
 
         if ($publishClasses) {
-            $this->flushNow( '<h3>Publish classes</h3>');
+            $this->flushNow('<h3>Publish classes</h3>');
             foreach ($publishClasses as $publishClass) {
-                $this->flushNow( '<h6>Publishing '.$publishClass.'</h6>' );
+                $this->flushNow('<h6>Publishing '.$publishClass.'</h6>');
                 try {
                     $count = 0;
                     $publishItems = $publishClass::get();
@@ -190,7 +187,7 @@ class MigrateDataTask extends BuildTask
                             ($publishItems->count() == 1 ? "" : "s") . "."
                         );
                         $publishItem->write();
-                        if($publishItem->hasMethod('copyVersionToStage')) {
+                        if ($publishItem->hasMethod('copyVersionToStage')) {
                             $publishItem->doPublish();
                             $publishItem->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                             $this->flushNow('... DONE - PUBLISHED');
@@ -198,10 +195,9 @@ class MigrateDataTask extends BuildTask
                             $this->flushNow('... DONE - WRITE ONLY');
                         }
                     }
-
                 } catch (Exception $e) {
-                    $this->flushNow( "Unable to publish " . $publishClass . "", 'error');
-                    $this->flushNow( "" . $e->getMessage() . "", 'error');
+                    $this->flushNow("Unable to publish " . $publishClass . "", 'error');
+                    $this->flushNow("" . $e->getMessage() . "", 'error');
                 }
             }
         }
@@ -221,12 +217,14 @@ class MigrateDataTask extends BuildTask
     protected function migrateSimple($includeInserts, $tableOld, $tableNew, $fieldNamesOld, $fieldNamesNew)
     {
 
-        if(! $this->tableExists($tableOld)) {
-            $this->flushNow( "$tableOld (old table) does not exist", 'error');;
+        if (! $this->tableExists($tableOld)) {
+            $this->flushNow("$tableOld (old table) does not exist", 'error');
+            ;
         }
 
-        if(! $this->tableExists($tableNew)) {
-            $this->flushNow( "$tableNew (new table) does not exist", 'error');;
+        if (! $this->tableExists($tableNew)) {
+            $this->flushNow("$tableNew (new table) does not exist", 'error');
+            ;
         }
 
         try {
@@ -239,11 +237,11 @@ class MigrateDataTask extends BuildTask
 
             //add a new line using the ID as identifier
             foreach ($oldEntries as $oldEntry) {
-                if($includeInserts) {
+                if ($includeInserts) {
                     if (! in_array($oldEntry['ID'], $newEntryIDs)) {
-                        $this->flushNow( 'Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.' );
+                        $this->flushNow('Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.');
                         DB::query('INSERT INTO "' . $tableNew . '" ("ID") VALUES (' . $oldEntry['ID'] . ');');
-                        $this->flushNow('... DONE '.DB::affected_rows().' rows affected' );
+                        $this->flushNow('... DONE '.DB::affected_rows().' rows affected');
                     }
                 }
 
@@ -251,21 +249,20 @@ class MigrateDataTask extends BuildTask
             }
 
             //update fields
-            if(count($oldEntryIDs)) {
-
+            if (count($oldEntryIDs)) {
                 //work out what option is shorter in terms of ID count:
                 $this->flushNow('working out update SQL..');
                 $allIDs = $this->getListOfIDs($tableNew);
                 $allIDCount = count($allIDs);
                 $oldIDCount = count($oldEntryIDs);
-                if($oldIDCount > ($allIDCount - $oldIDCount)) {
+                if ($oldIDCount > ($allIDCount - $oldIDCount)) {
                     $excludeIDs = array_diff($allIDs, $oldEntryIDs);
-                    if(count($excludeIDs) === 0) {
+                    if (count($excludeIDs) === 0) {
                         $excludeIDs = [0];
                     }
                     $wherePhrase = ' NOT IN (' . implode(', ', $excludeIDs) . ')';
                 } else {
-                    if(count($oldEntryIDs) === 0) {
+                    if (count($oldEntryIDs) === 0) {
                         $oldEntryIDs = [0];
                     }
                     $wherePhrase = ' IN (' . implode(', ', $oldEntryIDs) . ')';
@@ -273,10 +270,10 @@ class MigrateDataTask extends BuildTask
 
                 //update the new table with the old values
                 //for the rows that join with the ID and match the list of OLD ids.
-                if(count($fieldNamesNew)) {
+                if (count($fieldNamesNew)) {
                     $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
                     $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
-                    if(substr($tableNew, -9) == '_versions') {
+                    if (substr($tableNew, -9) == '_versions') {
                         $updateQuery .= ' AND "tablenew"."RecordID" = "tableold"."RecordID" ';
                         // also link to RecordID ...
                     }
@@ -291,22 +288,21 @@ class MigrateDataTask extends BuildTask
                     $updateQuery .= 'WHERE "tablenew"."ID" '.$wherePhrase.';';
                     $this->flushNow(str_replace($wherePhrase, '........', $updateQuery));
                     $sqlResults = DB::query($updateQuery);
-                    $this->flushNow('... DONE '.DB::affected_rows().' rows affected' );
+                    $this->flushNow('... DONE '.DB::affected_rows().' rows affected');
                 }
             }
         } catch (Exception $e) {
-            $this->flushNow( "Unable to migrate $tableOld to $tableNew.", 'error');
+            $this->flushNow("Unable to migrate $tableOld to $tableNew.", 'error');
             $this->flushNow($e->getMessage(), 'error');
         }
-
     }
 
 
     protected function makeTableObsolete($tableName) : bool
     {
         $schema = $this->getSchema();
-        if($this->tableExists($tableName)) {
-            if(! $this->tableExists('_obsolete_'.$tableName)) {
+        if ($this->tableExists($tableName)) {
+            if (! $this->tableExists('_obsolete_'.$tableName)) {
                 $schema->dontRequireTable($tableName);
                 return true;
             } else {
@@ -323,12 +319,11 @@ class MigrateDataTask extends BuildTask
 
     protected function tableExists($tableName) : bool
     {
-        if(! isset($this->_cacheTableExists[$tableName])) {
+        if (! isset($this->_cacheTableExists[$tableName])) {
             $schema = $this->getSchema();
-            if($this->_cacheTableExists[$tableName] = $schema->hasTable($tableName)) {
+            if ($this->_cacheTableExists[$tableName] = $schema->hasTable($tableName)) {
                 return true;
             } else {
-
             }
         }
 
@@ -341,7 +336,7 @@ class MigrateDataTask extends BuildTask
     protected function fieldExists($tableName, $fieldName) : bool
     {
         $key = $tableName.'_'.$fieldName;
-        if(! isset($this->_cacheFieldExists[$key])) {
+        if (! isset($this->_cacheFieldExists[$key])) {
             $schema = $this->getSchema();
             $fieldList = $schema->fieldList($tableName);
 
@@ -360,9 +355,11 @@ class MigrateDataTask extends BuildTask
 
     protected function getSchema()
     {
-        if($this->_schema === null) {
+        if ($this->_schema === null) {
             $this->_schema = DB::get_schema();
-            $this->_schema->schemaUpdate(function() {return true;});
+            $this->_schema->schemaUpdate(function () {
+                return true;
+            });
         }
         return $this->_schema;
     }
@@ -402,7 +399,7 @@ class MigrateDataTask extends BuildTask
             @ob_end_flush();
         }
         @ob_start();
-        if(Director::is_cli()) {
+        if (Director::is_cli()) {
             $message = strip_tags($message);
         }
         if ($bullet) {
@@ -411,5 +408,4 @@ class MigrateDataTask extends BuildTask
             echo $message;
         }
     }
-
 }

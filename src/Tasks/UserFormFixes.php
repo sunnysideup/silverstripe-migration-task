@@ -23,7 +23,8 @@ use SilverStripe\Versioned\Versioned;
 use DNADesign\Elemental\Models\ElementalArea;
 use SilverStripe\UserForms\Model\UserDefinedForm;
 
-class UserFormFixes extends MigrateDataTask {
+class UserFormFixes extends MigrateDataTask
+{
 
 
     protected $title = 'Publish Userforms Models';
@@ -75,12 +76,12 @@ fixing UserForm
 -------
         ');
         $objects = UserDefinedForm::get();
-        foreach($objects as $object) {
+        foreach ($objects as $object) {
             $this->flushNow('Publishing '.$object->getTitle());
             $isPublished = $object->IsPublished();
             $object->writeToStage(Versioned::DRAFT);
             $object->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
-            if(! $isPublished) {
+            if (! $isPublished) {
                 $object->doUnpublish();
             }
         }
@@ -91,8 +92,8 @@ fixing UserForm
     {
         $classField = $field.'Class';
         $idField = $field.'ID';
-        foreach($objects as $object) {
-            if($object->hasMethod('writeToStage')) {
+        foreach ($objects as $object) {
+            if ($object->hasMethod('writeToStage')) {
                 $this->flushNow('... publishing: '.$object->ClassName.'.'.$object->getTitle());
                 $object->writeToStage(Versioned::DRAFT);
                 $object->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
@@ -102,9 +103,9 @@ fixing UserForm
             }
             $relationClassValue = $object->$classField;
             $relationIDValue = $object->$idField;
-            if(class_exists($relationClassValue)) {
+            if (class_exists($relationClassValue)) {
                 $relation = $relationClassValue::get()->byID($relationIDValue);
-                if($relation) {
+                if ($relation) {
                     $this->flushNow('... Skipping: '.$object->ClassName.' relation => '.$relationClassValue.' WHERE ID = '.$relationIDValue);
                     continue;
                 } else {
@@ -123,6 +124,4 @@ fixing UserForm
             }
         }
     }
-
-
 }

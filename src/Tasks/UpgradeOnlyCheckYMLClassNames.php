@@ -35,96 +35,94 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTask
         $count = 0;
         $subDirs = $this->getSubDirectories(Director::baseFolder().'/');
         $ymlFiles = [];
-        foreach($subDirs as $subDir) {
+        foreach ($subDirs as $subDir) {
             $subDir = rtrim($subDir, '/') . '/';
             $fullSubDir = $subDir.'_config/';
-            if(file_exists($fullSubDir)) {
+            if (file_exists($fullSubDir)) {
                 $toAdds = $this->getYMLFiles($fullSubDir);
-                foreach($toAdds as $toAdd) {
+                foreach ($toAdds as $toAdd) {
                     $ymlFiles[] = $toAdd;
                 }
             }
         }
-        foreach($ymlFiles as $fileName) {
-            $this->flushNow( '
+        foreach ($ymlFiles as $fileName) {
+            $this->flushNow('
 ------------------------
 STARTING TESTING: '.$fileName.'
 ------------------------
             ');
             $count=0;
             $alreadySet = [];
-            if(! file_exists($fileName)) {
+            if (! file_exists($fileName)) {
                 die(' Could not find '.$fileName);
             }
             $fp = fopen($fileName, "r+");
-            while ($line = stream_get_line($fp, 1024 * 1024, "\n"))
-            {
+            while ($line = stream_get_line($fp, 1024 * 1024, "\n")) {
                 $count++;
                 $isProperty = false;
                 // $this->flushNow( '...';
                 //skip lines that are indented
-                if(substr($line, 0, 1) == ' ') {
+                if (substr($line, 0, 1) == ' ') {
                     $isProperty = true;
                 }
 
-                if($isProperty) {
+                if ($isProperty) {
                     $className = end($alreadySet);
-                    if($className && class_exists($className)) {
-                        if(strpos($line, ':')) {
+                    if ($className && class_exists($className)) {
+                        if (strpos($line, ':')) {
                             $myItems = explode(":", $line);
-                            if(count($myItems) == 2 && $myItems[0] && $myItems[1]) {
+                            if (count($myItems) == 2 && $myItems[0] && $myItems[1]) {
                                 $property = trim($myItems[0]);
                                 $property = trim($myItems[0], '\'');
                                 $property = trim($myItems[0], '"');
-                                if(strpos($property, '\\')) {
-                                    if(! class_exists($property)) {
-                                        $this->flushNow( '
+                                if (strpos($property, '\\')) {
+                                    if (! class_exists($property)) {
+                                        $this->flushNow('
 ERROR '.$className.'.'.$property.' may not exist as class name but looks like one.<br>');
                                     }
                                 } else {
-                                    if(strpos($property, '*')) {
-                                        $this->flushNow( '
+                                    if (strpos($property, '*')) {
+                                        $this->flushNow('
 ERROR '.$className.'.'.$property.' contains *.<br>');
                                     } else {
-                                        if(! property_exists($className, $property)) {
-                                            $this->flushNow( '
+                                        if (! property_exists($className, $property)) {
+                                            $this->flushNow('
 ERROR '.$className.'.'.$property.' property could not be found<br>');
                                         } else {
-                                            $this->flushNow( '
+                                            $this->flushNow('
 SUCCESS '.$className.'.'.$property.'');
                                         }
                                     }
                                 }
                             } else {
-                                $this->flushNow( '
+                                $this->flushNow('
     '.$line.' ... not two items<br>');
                             }
                         } else {
-                            $this->flushNow( '
+                            $this->flushNow('
 '.$line.' ... no colon<br>');
                         }
-                    } elseif($className) {
-                        $this->flushNow( '
+                    } elseif ($className) {
+                        $this->flushNow('
 COULD NOT FIND '.$className . '<br>');
                     }
-
                 } else {
-                    if(! strpos($line, '\\')) {
+                    if (! strpos($line, '\\')) {
                         continue;
                     }
-                    if(strpos($line, '*')) {
+                    if (strpos($line, '*')) {
                         continue;
                     }
                     $line = str_replace(':', '', $line);
                     $line = trim($line);
-                    if(isset($alreadySet[$line])) {
-                        $this->flushNow( '
+                    if (isset($alreadySet[$line])) {
+                        $this->flushNow('
 
 ERROR: Two mentions of '.$line . '<br>');
                     } else {
                         $alreadySet[$line] = $line;
-                        if(! class_exists($line)) {
-                            $this->flushNow( '
+                        if (! class_exists($line)) {
+                            $this->flushNow('
 
 ERROR: Could not find class '.$line . '<br>');
                         }
@@ -142,7 +140,6 @@ ERROR: Could not find class '.$line . '<br>');
 
             $count=0;
         }
-
     }
 
     private function getSubDirectories($dir)
@@ -155,7 +152,7 @@ ERROR: Could not find class '.$line . '<br>');
         // $subDir = array_merge($subDir, $directories);
         // Foreach directory, recursively get and add sub directories
         foreach ($directories as $directory) {
-            if(!in_array(basename($directory), $ignore)) {
+            if (!in_array(basename($directory), $ignore)) {
                 $subDirs[] = $directory;
             }
         }
@@ -177,5 +174,4 @@ ERROR: Could not find class '.$line . '<br>');
         }
         return $files;
     }
-
 }

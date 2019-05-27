@@ -34,18 +34,18 @@ class PublishAllFiles extends MigrateDataTask
         foreach ($result as $row) {
             $file = File::get()->byID($row['ID']);
             $name = $file->getFilename();
-            if(! $name) {
+            if (! $name) {
                 $file->write();
                 $name = $file->getFilename();
             }
-            if($file instanceof Folder) {
+            if ($file instanceof Folder) {
                 $this->flushNow('Skipping Folder: '.$name);
             } else {
-                if($name) {
+                if ($name) {
                     $originalDir = ASSETS_PATH.'/';
 
-                    if(file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
-                        if(!$file->getField('FileHash')) {
+                    if (file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
+                        if (!$file->getField('FileHash')) {
                             $hash = sha1_file($originalDir.$name);
                             DB::query('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
                         } else {
@@ -60,7 +60,7 @@ class PublishAllFiles extends MigrateDataTask
                         );
 
 
-                        if(!file_exists($targetDir)) {
+                        if (!file_exists($targetDir)) {
                             mkdir($targetDir, 0755, true);
                         }
 
@@ -70,8 +70,6 @@ class PublishAllFiles extends MigrateDataTask
                             $originalDir . $name,
                             $targetDir . basename($name)
                         );
-
-
                     } else {
                         $this->flushNow('Publishing: '.$name, 'created');
                         $admin->generateThumbnails($file);
@@ -85,6 +83,5 @@ class PublishAllFiles extends MigrateDataTask
 
             $file->destroy();
         }
-
     }
 }
