@@ -348,7 +348,7 @@ class MigrateDataTask extends BuildTask
 
     protected function renameField($table, $oldFieldName, $newFieldName)
     {
-        $this->getSchema()->renameField($table, $oldFieldName, $newFieldName);
+        $this->getSchema()->dontRequireField($table, $oldFieldName, $newFieldName);
     }
 
     protected $_schema = null;
