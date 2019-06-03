@@ -27,10 +27,14 @@ class MigrateDataTask extends BuildTask
         $this->flushNow('-----------------------------');
         $this->flushNow('THE START - look out for THE END ...');
         $this->flushNow('-----------------------------');
-        echo '
+        $this->flushNow(
+            '
             <link href="/resources/vendor/silverstripe/framework/client/styles/debug.css" rel="stylesheet">
             <ul class="build">
-        ';
+            ',
+            '',
+            false
+        );
         DataObject::Config()->set('validation_enabled', false);
         ini_set('memory_limit', '1024M');
         Environment::increaseMemoryLimitTo();
@@ -38,7 +42,10 @@ class MigrateDataTask extends BuildTask
 
         $this->performMigration();
 
-        echo '</ul>';
+        $this->flushNow('</ul>', '', false);
+        $this->flushNow('');
+        $this->flushNow('');
+        $this->flushNow('');
         $this->flushNow('-----------------------------');
         $this->flushNow('THE END');
         $this->flushNow('-----------------------------');
@@ -362,6 +369,16 @@ class MigrateDataTask extends BuildTask
             });
         }
         return $this->_schema;
+    }
+
+    protected $_schemaForDataObject = null;
+
+    protected function getSchemaForDataObject()
+    {
+        if ($this->_schemaForDataObject === null) {
+            $this->_schemaForDataObject = DataObject::getSchema();
+        }
+        return $this->_schemaForDataObject;
     }
 
     protected function getListOfIDs($tableName)
