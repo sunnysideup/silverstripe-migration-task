@@ -14,6 +14,37 @@ use SilverStripe\View\Requirements;
 
 class MigrateDataTask extends BuildTask
 {
+
+    /**
+     * an array that is formatted like this:
+     *     Name => [
+     *         pre_sql_queries: [
+     *             - 'SELECT * FROM FOO'
+     *         ],
+     *         data => [
+     *               [
+     *                   'include_inserts' => true|false, #assumed true if not provided
+     *                   'old_table' => 'foo',
+     *                   'new_table' => 'bar' (can be the same!)
+     *
+     *                   'simple_move_fields' => ['A', 'B', 'C']
+     *                       ---  OR ----
+     *                   'complex_move_fields' => ['A' => 'Anew', 'B' => 'BBew', 'C2' => 'Cnew']
+     *                ]
+     *         ]
+     *         publish_classes => [
+     *             - MyClassName1
+     *             - MyClassName2
+     *         ]
+     *         post_sql_queries => [
+     *             - 'SELECT * FROM FOO'
+     *         ]
+     *
+     *     ]
+     * @var array
+     */
+    private static $items_to_migrate = [];
+
     protected $title = 'Migrate Data';
 
     protected $description = 'Migrates specific data defined in yml';
