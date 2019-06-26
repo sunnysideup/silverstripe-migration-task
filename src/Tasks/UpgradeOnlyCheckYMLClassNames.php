@@ -46,11 +46,9 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTask
             }
         }
         foreach ($ymlFiles as $fileName) {
-            $this->flushNow('
-------------------------
-STARTING TESTING: '.$fileName.'
-------------------------
-            ');
+            $this->flushNowLine();
+            $this->flushNow('STARTING TESTING: '.$fileName.'');
+            $this->flushNowLine();
             $count=0;
             $alreadySet = [];
             if (! file_exists($fileName)) {
@@ -131,12 +129,9 @@ ERROR: Could not find class '.$line . '<br>');
                 //not a class name
             }
             fclose($fp);
-            $this->flushNow('
--------------END-------------
-'.$count.' lines
--------------END-------------
-
-');
+            $this->flushNowLine();
+            $this->flushNow(''.$count.' lines');
+            $this->flushNowLine();
 
             $count=0;
         }

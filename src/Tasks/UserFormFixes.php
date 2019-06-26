@@ -37,22 +37,18 @@ class UserFormFixes extends MigrateDataTask
     {
 
         // EditableFormField
-        $this->flushNow('
--------
-fixing EditableFormField
--------
-        ');
+        $this->flushNowLine();
+        $this->flushNow('fixing EditableFormField');
+        $this->flushNowLine();
         $objects = EditableFormField::get();
         $parentClassName = SiteTree::class;
         $field = 'Form';
         $this->writeObjects($objects, $parentClassName, $field);
 
         // EmailRecipient::get()
-        $this->flushNow('
--------
-fixing EmailRecipient
--------
-        ');
+        $this->flushNowLine();
+        $this->flushNow('fixing EmailRecipient');
+        $this->flushNowLine();
         $objects = EmailRecipient::get();
         $parentClassName = SiteTree::class;
         $field = 'Parent';
@@ -60,21 +56,17 @@ fixing EmailRecipient
         $this->writeObjects($objects, $parentClassName, $field);
 
         // SubmittedForm
-        $this->flushNow('
--------
-fixing SubmittedForm
--------
-        ');
+        $this->flushNowLine();
+        $this->flushNow('fixing SubmittedForm');
+        $this->flushNowLine();
         $objects = SubmittedForm::get();
         $parentClassName = SiteTree::class;
         $idField = 'Parent';
         $this->writeObjects($objects, $parentClassName, $field);
 
-        $this->flushNow('
--------
-fixing UserForm
--------
-        ');
+        $this->flushNowLine();
+        $this->flushNow('fixing UserForm');
+        $this->flushNowLine();
         $objects = UserDefinedForm::get();
         foreach ($objects as $object) {
             $this->flushNow('Publishing '.$object->getTitle());

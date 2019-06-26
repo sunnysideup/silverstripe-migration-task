@@ -55,9 +55,9 @@ class MigrateDataTask extends BuildTask
 
     public function run($request)
     {
-        $this->flushNow('-----------------------------');
+        $this->flushNowLine();
         $this->flushNow('THE START - look out for THE END ...');
-        $this->flushNow('-----------------------------');
+        $this->flushNowLine();
         $this->flushNow(
             '
             <link href="/resources/vendor/silverstripe/framework/client/styles/debug.css" rel="stylesheet">
@@ -77,9 +77,9 @@ class MigrateDataTask extends BuildTask
         $this->flushNow('');
         $this->flushNow('');
         $this->flushNow('');
-        $this->flushNow('-----------------------------');
+        $this->flushNowLine();
         $this->flushNow('THE END');
-        $this->flushNow('-----------------------------');
+        $this->flushNowLine();
     }
 
     /**
@@ -455,5 +455,19 @@ class MigrateDataTask extends BuildTask
         } else {
             echo $message;
         }
+    }
+
+
+    /**
+     * Show a message about task currently running
+     *
+     * @param string $message to display
+     * @param string $type one of [created|changed|repaired|obsolete|deleted|error]
+     * @param boolean $bullet add a bullet to message?
+     *
+     **/
+    protected function flushNowLine()
+    {
+        $this->flushNow('--------------------------------------------------------');
     }
 }

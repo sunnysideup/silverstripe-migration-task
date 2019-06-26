@@ -75,9 +75,9 @@ class CheckClassNames extends MigrateDataTask
             $allOK = true;
             $tableName = $this->dataObjectSchema->tableName($objectClassName);
             $this->flushNow('');
-            $this->flushNow('-----');
+            $this->flushNowLine();
             $this->flushNow('Checking '.$objectClassName.' => '.$tableName);
-            $this->flushNow('-----');
+            $this->flushNowLine();
             if (strpos($tableName, '_') !== false) {
                 $this->flushNow('... '.$objectClassName.' POTENTIALLY has a table with a full class name: '.$tableName.' it is recommended that you set the private static table_name', 'error');
                 $allOK = false;

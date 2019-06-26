@@ -16,7 +16,7 @@ class PublishAllFiles extends MigrateDataTask
 {
     protected $title = 'Publish All Files';
 
-    protected $description = 'Get all files ready to go';
+    protected $description = 'Get all files ready to go - useful in SS3 to SS4 conversion.';
 
     public function performMigration()
     {
