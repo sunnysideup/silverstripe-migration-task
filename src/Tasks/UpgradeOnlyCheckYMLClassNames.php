@@ -23,7 +23,11 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTask
         'public',
         'resources',
         'themes',
-        'vendor'
+        'vendor',
+    ];
+
+    private static $files_to_ignore = [
+        'database.legacy.yml',
     ];
 
     /**
@@ -41,7 +45,9 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTask
             if (file_exists($fullSubDir)) {
                 $toAdds = $this->getYMLFiles($fullSubDir);
                 foreach ($toAdds as $toAdd) {
-                    $ymlFiles[] = $toAdd;
+                    if(! in_array(basename($toAdd),$this->Config()->get('files_to_ignore'))) {
+                        $ymlFiles[] = $toAdd;
+                    }
                 }
             }
         }
@@ -54,7 +60,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTask
             if (! file_exists($fileName)) {
                 die(' Could not find '.$fileName);
             }
-            $fp = fopen($fileName, "r+");
+            $fp = fopen($fileName, 'r');
             while ($line = stream_get_line($fp, 1024 * 1024, "\n")) {
                 $count++;
                 $isProperty = false;
