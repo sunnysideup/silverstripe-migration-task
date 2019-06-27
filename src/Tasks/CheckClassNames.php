@@ -92,7 +92,7 @@ class CheckClassNames extends MigrateDataTask
                         $count = DB::query('SELECT COUNT("ID") FROM "'.$tableName.'"')->value();
                         $this->flushNow('... '.$count.' rows');
                         if ($count > 0) {
-                            $allFields = ['ClassName'];
+                            $allFields = [];
                             $moreFields = $this->Config()->other_fields_to_check;
                             if (isset($moreFields[$objectClassName])) {
                                 foreach ($moreFields[$objectClassName] as $additionalField) {
