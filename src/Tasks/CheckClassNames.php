@@ -46,9 +46,7 @@ class CheckClassNames extends MigrateDataTask
 
     protected $dataObjectSchema = null;
 
-    protected $onlyRunFor = [
-        'Heyday\WorkSafe\Model\Alert'
-    ];
+    protected $onlyRunFor = [];
 
     protected function performMigration()
     {
