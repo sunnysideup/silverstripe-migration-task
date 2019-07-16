@@ -46,6 +46,10 @@ class CheckClassNames extends MigrateDataTask
 
     protected $dataObjectSchema = null;
 
+    protected $onlyRunFor = [
+        'Heyday\WorkSafe\Model\Alert'
+    ];
+
     protected function performMigration()
     {
 
@@ -59,8 +63,9 @@ class CheckClassNames extends MigrateDataTask
             $this->dbTablesPresent[$table] = $table;
         }
 
-        //make a list of all classes
-        $objectClassNames = ClassInfo::subclassesFor(DataObject::class);
+        // make a list of all classes
+        // include baseclass = false
+        $objectClassNames = ClassInfo::subclassesFor(DataObject::class, false);
         foreach ($objectClassNames as $objectClassName) {
             $slashed = addslashes($objectClassName);
             $this->listOfAllClasses[$slashed] = ClassInfo::shortName($objectClassName);
@@ -69,11 +74,12 @@ class CheckClassNames extends MigrateDataTask
 
         //check all classes
         foreach ($objectClassNames as $objectClassName) {
-            if ($objectClassName === DataObject::class) {
+            if(count($this->onlyRunFor) && ! in_array($objectClassName, $this->onlyRunFor)) {
                 continue;
             }
             $fields = $this->dataObjectSchema->databaseFields($objectClassName, false);
             if (count($fields)) {
+
                 $allOK = true;
                 $tableName = $this->dataObjectSchema->tableName($objectClassName);
                 $this->flushNow('');
@@ -89,22 +95,25 @@ class CheckClassNames extends MigrateDataTask
                     $allOK = false;
                 } else {
                     if ($this->tableExists($tableName)) {
+                        // NB. we still run for zero rows, because we may need to fix versioned records
                         $count = DB::query('SELECT COUNT("ID") FROM "'.$tableName.'"')->value();
                         $this->flushNow('... '.$count.' rows');
-                        if ($count > 0) {
-                            $allFields = [];
-                            $moreFields = $this->Config()->other_fields_to_check;
-                            if (isset($moreFields[$objectClassName])) {
-                                foreach ($moreFields[$objectClassName] as $additionalField) {
-                                    $allFields[] = $additionalField;
-                                }
+
+                        $allFields = [
+                            'ClassName'
+                        ];
+                        $moreFields = $this->Config()->other_fields_to_check;
+                        if (isset($moreFields[$objectClassName])) {
+                            foreach ($moreFields[$objectClassName] as $additionalField) {
+                                $allFields[] = $additionalField;
                             }
-                            foreach ($allFields as $fieldName) {
-                                if ($this->fieldExists($tableName, $fieldName)) {
-                                    $this->fixingClassNames($tableName, $objectClassName, $fieldName, false);
-                                } else {
-                                    $this->flushNow('... Can not find: '.$tableName.'.'.$fieldName.' in database.');
-                                }
+                        }
+                        print_r($allFields);
+                        foreach ($allFields as $fieldName) {
+                            if ($this->fieldExists($tableName, $fieldName)) {
+                                $this->fixingClassNames($tableName, $objectClassName, $fieldName, false);
+                            } else {
+                                $this->flushNow('... Can not find: '.$tableName.'.'.$fieldName.' in database.');
                             }
                         }
                     } else {
@@ -124,7 +133,7 @@ class CheckClassNames extends MigrateDataTask
     }
 
 
-    protected function fixingClassNames($tableName, $objectClassName, $fieldName = 'ClassName', $fake = false)
+    protected function fixingClassNames($tableName, $objectClassName, $fieldName = 'ClassName', $versionedTable = false)
     {
         $this->flushNow('... CHECKING '.$tableName.'.'.$fieldName.' ...');
         $count = DB::query('SELECT COUNT("ID") FROM "'.$tableName.'"')->value();
@@ -238,9 +247,8 @@ class CheckClassNames extends MigrateDataTask
                 }
             }
         }
-
         //run again with versioned tables ...
-        if ($fake === false) {
+        if ($versionedTable === false) {
             foreach (['_Live', '_Versions'] as $extension) {
                 $testTable = $tableName.$extension;
                 if ($this->tableExists($testTable)) {
