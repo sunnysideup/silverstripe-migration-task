@@ -18,6 +18,8 @@ class PublishAllFiles extends MigrateDataTask
 
     protected $description = 'Get all files ready to go - useful in SS3 to SS4 conversion.';
 
+    protected $updateLocation = false;
+
     public function performMigration()
     {
 
@@ -42,38 +44,48 @@ class PublishAllFiles extends MigrateDataTask
                 $this->flushNow('Skipping Folder: '.$name);
             } else {
                 if ($name) {
-                    $originalDir = ASSETS_PATH.'/';
+                    if($this->updateLocation) {
+                        $originalDir = ASSETS_PATH.'/';
+                        if (file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
+                            if (!$file->getField('FileHash')) {
+                                $hash = sha1_file($originalDir.$name);
+                                DB::query('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
+                            } else {
+                                $hash = $file->FileHash;
+                            }
 
-                    if (file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
-                        if (!$file->getField('FileHash')) {
-                            $hash = sha1_file($originalDir.$name);
-                            DB::query('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
+                            $targetDir = str_replace(
+                                './',
+                                '',
+                                ASSETS_PATH .'/.protected/'. dirname($name)
+                                    .'/'. substr($hash, 0, 10) . '/'
+                            );
+
+
+                            if (!file_exists($targetDir)) {
+                                mkdir($targetDir, 0755, true);
+                            }
+
+                            $this->flushNow($originalDir . $name .' > '. $targetDir . basename($name), 'obsolete');
+
+                            rename(
+                                $originalDir . $name,
+                                $targetDir . basename($name)
+                            );
                         } else {
-                            $hash = $file->FileHash;
+                            $this->flushNow('Publishing: '.$name, 'created');
+                            $admin->generateThumbnails($file);
+                            $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                         }
-
-                        $targetDir = str_replace(
-                            './',
-                            '',
-                            ASSETS_PATH .'/.protected/'. dirname($name)
-                                .'/'. substr($hash, 0, 10) . '/'
-                        );
-
-
-                        if (!file_exists($targetDir)) {
-                            mkdir($targetDir, 0755, true);
-                        }
-
-                        $this->flushNow($originalDir . $name .' > '. $targetDir . basename($name), 'obsolete');
-
-                        rename(
-                            $originalDir . $name,
-                            $targetDir . basename($name)
-                        );
                     } else {
-                        $this->flushNow('Publishing: '.$name, 'created');
-                        $admin->generateThumbnails($file);
-                        $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+                        if($this->File->exists()) {
+                            $this->flushNow('Publishing: '.$name, 'created');
+                            $admin->generateThumbnails($file);
+                            $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+                        } else {
+                            $this->flushNow('error finding: '.$name, 'created');
+                            $this->flushNow($file->File->getMetaData());
+                        }
                     }
                 } else {
                     $this->flushNow('Error in finding name for '.print_r($file->toMap(), 1));
