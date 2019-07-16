@@ -106,7 +106,6 @@ class CheckClassNames extends MigrateDataTask
                                 $allFields[] = $additionalField;
                             }
                         }
-                        print_r($allFields);
                         foreach ($allFields as $fieldName) {
                             if ($this->fieldExists($tableName, $fieldName)) {
                                 $this->fixingClassNames($tableName, $objectClassName, $fieldName, false);
