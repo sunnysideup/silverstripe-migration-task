@@ -78,13 +78,17 @@ class PublishAllFiles extends MigrateDataTask
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                         }
                     } else {
-                        if($this->File->exists()) {
-                            $this->flushNow('Publishing: '.$name, 'created');
-                            $admin->generateThumbnails($file);
-                            $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
-                        } else {
-                            $this->flushNow('error finding: '.$name, 'created');
-                            $this->flushNow($file->File->getMetaData());
+                        try {
+                            if($file->exists()) {
+                                $this->flushNow($file->getMetaData());
+                                $this->flushNow('Publishing: '.$name, 'created');
+                                $admin->generateThumbnails($file);
+                                $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+                            } else {
+                                $this->flushNow('error finding: '.$name, 'created');
+                            }
+                        } catch (\Exception $e) {
+                            $this->flushNow('Error in publishing ...'.print_r($file->toMap(), 1), 'created');
                         }
                     }
                 } else {
