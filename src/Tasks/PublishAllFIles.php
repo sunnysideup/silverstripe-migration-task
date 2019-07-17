@@ -78,13 +78,13 @@ class PublishAllFiles extends MigrateDataTask
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                         }
                     } else {
-                        if($this->File->exists()) {
+                        if($file->exists()) {
                             $this->flushNow('Publishing: '.$name, 'created');
                             $admin->generateThumbnails($file);
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                         } else {
                             $this->flushNow('error finding: '.$name, 'created');
-                            $this->flushNow($file->File->getMetaData());
+                            $this->flushNow($file->getMetaData());
                         }
                     }
                 } else {
