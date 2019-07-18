@@ -21,6 +21,33 @@ class PublishAllFiles extends MigrateDataTask
 
     protected $updateLocation = false;
 
+    protected $generateThumbnails = false;
+
+    /**
+     * @param bool $b
+     *
+     * @return PublishAllFiles
+     */
+    public function setUpdateLocation($b)
+    {
+        $this->updateLocation = $b;
+
+        return $this;
+    }
+
+
+    /**
+     * @param bool $b
+     *
+     * @return PublishAllFiles
+     */
+    public function setGenerateThumbnails($b)
+    {
+        $this->generateThumbnails = $b;
+
+        return $this;
+    }
+
     public function performMigration()
     {
         $this->admin = Injector::inst()->get(AssetAdmin::class);
@@ -30,7 +57,6 @@ class PublishAllFiles extends MigrateDataTask
 
     protected function runForFolder($parentID)
     {
-
         $sqlQuery = new SQLSelect();
         $sqlQuery->setFrom('File');
         $sqlQuery->selectField('ID');
@@ -55,7 +81,9 @@ class PublishAllFiles extends MigrateDataTask
                     try {
                         if($file->exists()) {
                             $this->flushNow('Publishing: '.$name);
-                            $this->admin->generateThumbnails($file);
+                            if($this->generateThumbnails) {
+                                $this->admin->generateThumbnails($file);
+                            }
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                         } else {
                             $this->flushNow('error finding: '.$name, 'deleted');
@@ -122,7 +150,7 @@ class PublishAllFiles extends MigrateDataTask
         }
         $count1 = DB::query('SELECT COUNT("ID") FROM "File" '.$where)->value();
         $count2 = DB::query('SELECT COUNT("ID") FROM "File_Live"'.$where)->value();
-        if($count1 === $count2 && 1 === 2) {
+        if($count1 === $count2) {
             $this->flushNow('<h1>Draft and Live have the same amount of items '.$where.'</h1>', 'created');
         } else {
             $this->flushNow('
