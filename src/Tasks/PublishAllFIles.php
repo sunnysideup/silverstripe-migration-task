@@ -35,6 +35,7 @@ class PublishAllFiles extends MigrateDataTask
         $sqlQuery->setFrom('File');
         $sqlQuery->selectField('ID');
         $sqlQuery->addWhere(['ParentID' => $parentID]);
+        $sqlQuery->setOrderBy('Name');
 
         // Execute and return a Query object
         $result = $sqlQuery->execute();
@@ -53,8 +54,7 @@ class PublishAllFiles extends MigrateDataTask
                     }
                     try {
                         if($file->exists()) {
-                            $this->flushNow($file->getMetaData());
-                            $this->flushNow('Publishing: '.$name, 'created');
+                            $this->flushNow('Publishing: '.$name);
                             $this->admin->generateThumbnails($file);
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                         } else {
