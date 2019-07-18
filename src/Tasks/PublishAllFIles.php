@@ -149,7 +149,7 @@ class PublishAllFiles extends MigrateDataTask
             $where = ' WHERE ParentID = '.$parentID;
         }
         $count1 = DB::query('SELECT COUNT("ID") FROM "File" '.$where)->value();
-        $count2 = DB::query('SELECT COUNT("ID") FROM "File_Live"'.$where)->value();
+        $count2 = DB::query('SELECT COUNT("ID") FROM "File_Live" '.$where)->value();
         if($count1 === $count2) {
             $this->flushNow('<h1>Draft and Live have the same amount of items '.$where.'</h1>', 'created');
         } else {
