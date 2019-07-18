@@ -439,6 +439,9 @@ class MigrateDataTask extends BuildTask
      **/
     protected function flushNow($message, $type = '', $bullet = true)
     {
+        if(is_array($message)) {
+            $message = print_r($message);
+        }
         echo '';
         // check that buffer is actually set before flushing
         if (ob_get_length()) {
