@@ -89,7 +89,8 @@ class DraftVsLive extends MigrateDataTask
                 }
                 $allOk = false;
                 $this->flushNow(
-                    '... ... DRAFT !== LIVE for ID <strong>'.$draftRow['ID'].'</strong>, '.
+                    '... ... DRAFT !== LIVE for <strong>'.$table.'</strong>, '.
+                    'ID <strong>'.$draftRow['ID'].'</strong>, '.
                     'FIELD: <strong>'.$key.'</strong>:
                     ('.strip_tags(substr(print_r($draftRow[$key], 1), 0, 100)).')
                     ('.strip_tags(substr(print_r($liveRow[$key], 1), 0, 100)).') === ',
