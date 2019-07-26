@@ -98,7 +98,7 @@ class CheckClassNames extends MigrateDataTask
                         $this->flushNow('... '.$count.' rows');
 
                         $allFields = [
-                            'ClassName'
+                            'ClassName',
                         ];
                         $moreFields = $this->Config()->other_fields_to_check;
                         if (isset($moreFields[$objectClassName])) {
