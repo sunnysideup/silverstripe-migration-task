@@ -23,6 +23,10 @@ class PublishAllFiles extends MigrateDataTask
 
     protected $generateThumbnails = false;
 
+    protected $oneFolderOnlyID = 0;
+
+    protected $oneFileOnlyID = 0;
+
     /**
      * @param bool $b
      *
@@ -57,6 +61,15 @@ class PublishAllFiles extends MigrateDataTask
 
     protected function runForFolder($parentID)
     {
+        if($this->oneFolderOnlyID && $this->oneFolderOnlyID !== $parentID) {
+            return;
+        }
+        if($parentID) {
+            $folder = Folder::get()->byID($parentID);
+            $this->flushNow('<h3>Processing Folder: '.$folder->getFilename().'</h3>');
+        } else {
+            $this->flushNow('<h3>Processing Root Folder</h3>');
+        }
         $sqlQuery = new SQLSelect();
         $sqlQuery->setFrom('File');
         $sqlQuery->selectField('ID');
@@ -73,6 +86,9 @@ class PublishAllFiles extends MigrateDataTask
                     $file->write();
                     $name = $file->getFilename();
                 }
+                if($this->oneFileOnlyID && $this->oneFileOnlyID !== $file->ID) {
+                    continue;
+                }
                 if ($name) {
                     if($this->updateLocation) {
                         $this->updateLocationForOneFile($file, $name);
@@ -80,19 +96,25 @@ class PublishAllFiles extends MigrateDataTask
                     }
                     try {
                         if($file->exists()) {
-                            $this->flushNow('Publishing: '.$name);
+                            $this->flushNow('... Publishing: '.$name.', ID = '.$file->ID);
                             if($this->generateThumbnails) {
                                 $this->admin->generateThumbnails($file);
                             }
+                            $file->forceChange();
+                            $file->write();
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+                            $test = DB::query('SELECT COUNT(ID) FROM File_Live WHERE ID = '.$file->ID)->value();
+                            if(intval($test) === 0) {
+                                $this->flushNow('... error finding: '.$name, 'deleted');
+                            }
                         } else {
-                            $this->flushNow('error finding: '.$name, 'deleted');
+                            $this->flushNow('... Error in publishing V2 ...'.print_r($file->toMap(), 1), 'deleted');
                         }
                     } catch (\Exception $e) {
-                        $this->flushNow('Error in publishing ...'.print_r($file->toMap(), 1), 'deleted');
+                        $this->flushNow('... Error in publishing V1 ...'.print_r($file->toMap(), 1), 'deleted');
                     }
                 } else {
-                    $this->flushNow('Error in finding name for '.print_r($file->toMap(), 1), 'deleted');
+                    $this->flushNow('... Error in finding name for '.print_r($file->toMap(), 1), 'deleted');
                 }
 
                 $file->destroy();
