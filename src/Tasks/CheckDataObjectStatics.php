@@ -76,7 +76,7 @@ class CheckDataObjectStatics extends MigrateDataTask
 
             $summaryFields = Config::inst()->get($objectClassName, 'summary_fields');
             $searchableFields = Config::inst()->get($objectClassName, 'searchable_fields');
-            if(count($summaryFields) > 0 && count($searchableFields) === 0) {
+            if(! empty($summaryFields)) {
                 $dbFields = array_keys(Config::inst()->get($objectClassName, 'db'));
                 if(count($dbFields) > 5) {
                     $recommended = array_intersect($dbFields, $summaryFields);
