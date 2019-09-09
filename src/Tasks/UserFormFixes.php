@@ -98,7 +98,10 @@ class UserFormFixes extends MigrateDataTask
                 $relationClassValue = $object->ParentClass;
             }
             $relationIDValue = $object->$idField;
-            if (class_exists($relationClassValue)) {
+            if(! $relationIDValue = $object->$idField) {
+                $relationIDValue = $object->ParentID;
+            }
+            if (class_exists($relationClassValue) && $relationIDValue) {
                 $relation = $relationClassValue::get()->byID($relationIDValue);
                 if ($relation) {
                     $this->flushNow('... Skipping: '.$object->ClassName.' relation => '.$relationClassValue.' WHERE ID = '.$relationIDValue);
@@ -107,7 +110,11 @@ class UserFormFixes extends MigrateDataTask
                     $this->flushNow('... ERROR: : '.$object->ClassName.' relation => could not find: '.$relationClassValue.' WHERE ID = '.$relationIDValue, 'error');
                 }
             } else {
-                $this->flushNow('... ERROR: : '.$relationClassValue.' class does not exist, this should be set in the following field: '.$classField.' or ParentClass', 'error');
+                $this->flushNow('
+                    ... ERROR: : '.$relationClassValue.' class does not exist for ID = '.$relationIDValue.',
+                    this should be set in the following field: '.$classField.' or ParentClass',
+                    'error'
+                );
             }
             $pageID = $object->$field;
             if(! $pageID) {
