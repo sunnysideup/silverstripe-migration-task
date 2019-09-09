@@ -42,7 +42,7 @@ class UserFormFixes extends MigrateDataTask
         $this->flushNowLine();
         $objects = EditableFormField::get();
         $parentClassName = SiteTree::class;
-        $field = 'Form';
+        $field = 'Parent';
         $this->writeObjects($objects, $parentClassName, $field);
 
         // EmailRecipient::get()
@@ -85,57 +85,56 @@ class UserFormFixes extends MigrateDataTask
         $classField = $field.'Class';
         $idField = $field.'ID';
         foreach ($objects as $object) {
-            if ($object->hasMethod('writeToStage')) {
-                $this->flushNow('... publishing: '.$object->ClassName.'.'.$object->getTitle());
-                $object->writeToStage(Versioned::DRAFT);
-                $object->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
-            } else {
-                $this->flushNow('... writing: '.$object->ClassName.'.'.$object->getTitle());
-                $object->write();
-            }
+            $this->flushNow('-');
             $relationClassValue = $object->$classField;
-            if(! $relationClassValue) {
-                $relationClassValue = $object->ParentClass;
-            }
             $relationIDValue = $object->$idField;
-            if(! $relationIDValue = $object->$idField) {
-                $relationIDValue = $object->ParentID;
-            }
-            if (class_exists($relationClassValue) && $relationIDValue) {
-                $relation = $relationClassValue::get()->byID($relationIDValue);
-                if ($relation) {
-                    $this->flushNow('... Skipping: '.$object->ClassName.' relation => '.$relationClassValue.' WHERE ID = '.$relationIDValue);
-                    continue;
+            $this->writeInner($object);
+            if (class_exists($relationClassValue)) {
+                if($relationIDValue) {
+                    $relation = $relationClassValue::get()->byID($relationIDValue);
+                    if ($relation && $relation->ClassName === $relationClassValue) {
+                        $this->flushNow('... OK: '.$object->ClassName.' relation => '.$relationClassValue.' WHERE ID = '.$relationIDValue);
+                        continue;
+                    } else {
+                        $this->flushNow('... ERROR: : '.$object->ClassName.' relation => could not find: '.$relationClassValue.' WHERE ID = '.$relationIDValue, 'error');
+                        $page = $parentClassName::get()->byID($relationIDValue);
+                        if ($page) {
+                            $this->flushNow('... FIXING '.$object->getTitle());
+                            $object->$classField = $page->ClassName;
+                            $this->writeInner($object);
+                            $this->flushNow('... FIXING: setting '.$relationClassValue.' WHERE ID = '.$relationIDValue.' to '.$page->ClassName, 'repaired');
+                        } else {
+                            $this->flushNow('... Skipping page (should extend '.$parentClassName.') with ID: '.$pageID.' as it could not be found.');
+                        }
+
+                    }
                 } else {
-                    $this->flushNow('... ERROR: : '.$object->ClassName.' relation => could not find: '.$relationClassValue.' WHERE ID = '.$relationIDValue, 'error');
+                    $this->flushNow('
+                        ... ERROR: : '.$relationClassValue.' class does not exist for ID = '.$relationIDValue.',
+                        this should be set in the following field: '.$idField.' or ParentClass',
+                        'error'
+                    );
                 }
             } else {
                 $this->flushNow('
-                    ... ERROR: : '.$relationClassValue.' class does not exist for ID = '.$relationIDValue.',
+                    ... ERROR: : '.$relationClassValue.' class does not exist,
                     this should be set in the following field: '.$classField.' or ParentClass',
                     'error'
                 );
             }
-            $pageID = $object->$field;
-            if(! $pageID) {
-                $pageID = $object->$idField;
-                if(! $pageID) {
-                    $pageID = $object->ParentID;
-                }
-            }
-            if ($pageID) {
-                $page = $parentClassName::get()->byID($pageID);
-                if ($page) {
-                    $this->flushNow('... fixing '.$object->getTitle());
-                    $object->$classField = $page->ClassName;
-                    $object->write();
-                    $this->flushNow('... FIXING: setting '.$relationClassValue.' WHERE ID = '.$relationIDValue.' to '.$page->ClassName, 'repaired');
-                } else {
-                    $this->flushNow('... Skipping page (should extend '.$parentClassName.') with ID: '.$pageID.' as it could not be found.');
-                }
-            } else {
-                $this->flushNow('... Skipping setting class field for object as PageID field ('.$field.' and ParentID) is empty.');
-            }
         }
     }
+
+    protected function writeInner($object)
+    {
+        if ($object->hasMethod('writeToStage')) {
+            $this->flushNow('... publishing: '.$object->ClassName.'.'.$object->getTitle());
+            $object->writeToStage(Versioned::DRAFT);
+            $object->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+        } else {
+            $this->flushNow('... writing: '.$object->ClassName.'.'.$object->getTitle());
+            $object->write();
+        }
+    }
+
 }
