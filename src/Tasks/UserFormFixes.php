@@ -121,7 +121,7 @@ class UserFormFixes extends MigrateDataTask
                 if ($page) {
                     $this->flushNow('... fixing '.$object->getTitle());
                     $object->$classField = $page->ClassName;
-                    $oject->write();
+                    $object->write();
                     $this->flushNow('... FIXING: setting '.$relationClassValue.' WHERE ID = '.$relationIDValue.' to '.$page->ClassName, 'repaired');
                 } else {
                     $this->flushNow('... Skipping page (should extend '.$parentClassName.') with ID: '.$pageID.' as it could not be found.');
