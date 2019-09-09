@@ -103,6 +103,8 @@ class UserFormFixes extends MigrateDataTask
                 } else {
                     $this->flushNow('... ERROR: : '.$object->ClassName.' relation => could not find: '.$relationClassValue.' WHERE ID = '.$relationIDValue, 'error');
                 }
+            } else {
+                $this->flushNow('... ERROR: : '.$relationClassValue.' class does not exist.', 'error');
             }
             $pageID = $object->$field;
             if ($pageID) {
@@ -112,7 +114,11 @@ class UserFormFixes extends MigrateDataTask
                     $object->$classField = $page->ClassName;
                     $oject->write();
                     $this->flushNow('... FIXING: setting '.$relationClassValue.' WHERE ID = '.$relationIDValue.' to '.$page->ClassName, 'repaired');
+                } else {
+                    $this->flushNow('... Skipping page (should extend '.$parentClassName.') with ID: '.$pageID.' as it could not be found.');
                 }
+            } else {
+                $this->flushNow('... Skipping setting class field for object as PageID field ('.$field.') is empty.');
             }
         }
     }
