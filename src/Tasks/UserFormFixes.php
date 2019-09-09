@@ -104,7 +104,7 @@ class UserFormFixes extends MigrateDataTask
                     $this->flushNow('... ERROR: : '.$object->ClassName.' relation => could not find: '.$relationClassValue.' WHERE ID = '.$relationIDValue, 'error');
                 }
             } else {
-                $this->flushNow('... ERROR: : '.$relationClassValue.' class does not exist.', 'error');
+                $this->flushNow('... ERROR: : '.$relationClassValue.' class does not exist, this should be set in the following field: '.$classField, 'error');
             }
             $pageID = $object->$field;
             if ($pageID) {
