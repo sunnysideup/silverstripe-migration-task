@@ -77,14 +77,14 @@ class CheckClassNames extends MigrateDataTask
             }
             $fields = $this->dataObjectSchema->databaseFields($objectClassName, false);
             if (count($fields)) {
-
                 $allOK = true;
                 $tableName = $this->dataObjectSchema->tableName($objectClassName);
                 $this->flushNow('');
                 $this->flushNowLine();
                 $this->flushNow('Checking '.$objectClassName.' => '.$tableName);
                 $this->flushNowLine();
-                if (strpos($tableName, '_') !== false) {
+                $tableNameStaticValue = Config::inst()->get($objectClassName, 'table_name');
+                if ($tableNameStaticValue !== $tableName) {
                     $this->flushNow('... '.$objectClassName.' POTENTIALLY has a table with a full class name: '.$tableName.' it is recommended that you set the private static table_name', 'error');
                     $allOK = false;
                 }
