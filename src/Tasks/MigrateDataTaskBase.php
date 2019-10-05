@@ -12,8 +12,12 @@ use SilverStripe\Control\Director;
 use SilverStripe\Versioned\Versioned;
 use SilverStripe\View\Requirements;
 
+use Sunnysideup\Flush\FlushNow;
+
 abstract class MigrateDataTaskBase extends BuildTask
 {
+
+    use FlushNow;
 
     protected $title = 'Abstract Migration Class';
 
