@@ -10,7 +10,7 @@ use SilverStripe\Control\Director;
  * Reorganizing the SiteTree led to AsbestosLicenceHolders records being in the _Live table but not in the
  * draft table. This tasks should be run once to get rid of them
  */
-class UpgradeOnlyCheckYMLClassNames extends MigrateDataTask
+class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
 {
 
     /**
@@ -25,6 +25,8 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTask
         'themes',
         'vendor',
     ];
+
+    protected $enabled = true;
 
     private static $files_to_ignore = [
         'database.legacy.yml',

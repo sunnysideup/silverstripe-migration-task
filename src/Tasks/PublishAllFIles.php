@@ -13,7 +13,7 @@ use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Versioned\Versioned;
 use SilverStripe\Core\Injector\Injector;
 
-class PublishAllFiles extends MigrateDataTask
+class PublishAllFiles extends MigrateDataTaskBase
 {
     protected $title = 'Publish All Files';
 
@@ -132,7 +132,7 @@ class PublishAllFiles extends MigrateDataTask
         if (file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
             if (!$file->getField('FileHash')) {
                 $hash = sha1_file($originalDir.$name);
-                DB::query('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
+                $this->runUpdateQuery('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
             } else {
                 $hash = $file->FileHash;
             }

@@ -14,7 +14,7 @@ use SilverStripe\Dev\BuildTask;
 use SilverStripe\Control\Director;
 use SilverStripe\Versioned\Versioned;
 
-class CheckClassNames extends MigrateDataTask
+class CheckClassNames extends MigrateDataTaskBase
 {
 
     /**
@@ -26,7 +26,11 @@ class CheckClassNames extends MigrateDataTask
      *     ]
      * @var array
      */
-    private static $other_fields_to_check = [];
+    private static $other_fields_to_check = [
+        'ElementalArea' => [
+            'OwnerClassName',
+        ],
+    ];
 
     protected $title = 'Check all tables for valid class names';
 
@@ -166,11 +170,12 @@ class CheckClassNames extends MigrateDataTask
                             if ($longNameAlreadySlashed) {
                                 $this->flushNow('... ... ... Updating '.$row[$fieldName].' to '.$longNameAlreadySlashed.' - based in short to long mapping of the '.$fieldName.' field. ', 'created');
                                 if ($this->forReal) {
-                                    DB::query('
+                                    $this->runUpdateQuery('
                                         UPDATE "'.$tableName.'"
                                         SET "'.$tableName.'"."'.$fieldName.'" = \''.$longNameAlreadySlashed.'\'
-                                        WHERE "'.$fieldName.'" = \''.$row[$fieldName].'\'');
-                                    $this->flushNow('... ... updated '.DB::affected_rows().' rows');
+                                        WHERE "'.$fieldName.'" = \''.$row[$fieldName].'\'',
+                                        2
+                                    );
                                 }
                             }
                         }
@@ -217,19 +222,22 @@ class CheckClassNames extends MigrateDataTask
                             }
                             $this->flushNow('... Updating '.$fieldName.' to '.$objectClassName.' for ID = '.$row['ID'].', '.$fieldName.' = '.$row[$fieldName].' - based on inability to find matching IDs in any child class tables', 'created');
                             if ($this->forReal) {
-                                DB::query('
+                                $this->runUpdateQuery('
                                     UPDATE "'.$tableName.'"
                                     SET "'.$tableName.'"."'.$fieldName.'" = \''.addslashes($objectClassName).'\'
-                                    WHERE ID = '.$row['ID']);
-                                $this->flushNow('... ... DONE updated '.DB::affected_rows().' rows');
+                                    WHERE ID = '.$row['ID'],
+                                    2
+                                );
                             }
                         } elseif ($optionCount === 1 && $matchedClassName) {
                             $this->flushNow('... Updating '.$fieldName.' to '.$matchedClassName.' ID = '.$row['ID'].', '.$fieldName.' = '.$row[$fieldName].' - based on matching row in exactly one child class table', 'created');
                             if ($this->forReal) {
-                                DB::query('
-                                    UPDATE "'.$tableName.'"
+                                $this->runUpdateQuery(
+                                    'UPDATE "'.$tableName.'"
                                     SET "'.$tableName.'"."'.$fieldName.'" = \''.addslashes($matchedClassName).'\'
-                                    WHERE ID = '.$row['ID']);
+                                    WHERE ID = '.$row['ID'],
+                                    2
+                                );
                             }
                         } else {
                             $this->flushNow('... ERROR: can not find best '.$fieldName.' for '.$tableName.'.ID = '.$row['ID'].' current value: '.$row[$fieldName], 'error');
@@ -238,8 +246,7 @@ class CheckClassNames extends MigrateDataTask
                 } else {
                     $this->flushNow('... Updating "'.$tableName.'"."'.$fieldName.'" TO NULL WHERE '.$where, 'created');
                     if ($this->forReal) {
-                        DB::query('UPDATE "'.$tableName.'" SET "'.$fieldName.'" = \'\' WHERE '.$where);
-                        $this->flushNow('... ... DONE updated '.DB::affected_rows().' rows');
+                        $this->runUpdateQuery('UPDATE "'.$tableName.'" SET "'.$fieldName.'" = \'\' WHERE '.$where, 2);
                     }
                 }
             }

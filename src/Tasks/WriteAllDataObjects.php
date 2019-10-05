@@ -16,7 +16,7 @@ use SilverStripe\Versioned\Versioned;
 use SilverStripe\Versioned\ChangeSet;
 use SilverStripe\Versioned\ChangeSetItem;
 
-class WriteAllDataObjects extends MigrateDataTask
+class WriteAllDataObjects extends MigrateDataTaskBase
 {
 
     /**
@@ -84,6 +84,7 @@ class WriteAllDataObjects extends MigrateDataTask
     protected $enabled = true;
 
     protected $listOfFieldTypesRaw = [];
+
     protected $listOfFieldTypesClean = [];
 
     protected function performMigration()

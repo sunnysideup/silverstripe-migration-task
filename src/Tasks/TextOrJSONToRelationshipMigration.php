@@ -12,7 +12,7 @@ use Sunnysideup\MigrateData\Tasks\MigrateDataTask;
  * Used to debug a QueueJob
  *  @todo: UPGRADE: remove after upgrade
  */
-class TextOrJSONToRelationshipMigration extends MigrateDataTask
+class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
 {
     /**
      * {@inheritDoc}
@@ -27,6 +27,9 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTask
     protected $description = '
         For example, it can convert all the values of all DB columnns used by listbox fields
         from comma separated strings to JSON and then to Many Many';
+
+    protected $enabled = true;
+
 
     protected $sanitiseCharList = [
         '"',
@@ -137,7 +140,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTask
                     ' with row ID: ' . $id . ' to new value of ' . $fieldValue,
                     'repaired'
                 );
-                DB::query($sql);
+                $this->runUpdateQuery($sql);
             } else {
                 $this->flushNow(
                     '... ... ... ... ... ' .

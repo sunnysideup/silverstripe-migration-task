@@ -23,7 +23,7 @@ use SilverStripe\Versioned\Versioned;
 use DNADesign\Elemental\Models\ElementalArea;
 use SilverStripe\UserForms\Model\UserDefinedForm;
 
-class UserFormFixes extends MigrateDataTask
+class UserFormFixes extends MigrateDataTaskBase
 {
 
 

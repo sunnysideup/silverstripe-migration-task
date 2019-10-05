@@ -13,11 +13,13 @@ use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Versioned\Versioned;
 use SilverStripe\Core\Injector\Injector;
 
-class DraftVsLive extends MigrateDataTask
+class DraftVsLive extends MigrateDataTaskBase
 {
     protected $title = 'Compare Drafts vs Live';
 
     protected $description = 'Go through every table and compare DRAFT vs Live';
+
+    protected $enabled = true;
 
     protected $selectedTables = [];
 

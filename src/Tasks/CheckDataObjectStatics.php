@@ -14,7 +14,7 @@ use SilverStripe\Dev\BuildTask;
 use SilverStripe\Control\Director;
 use SilverStripe\Versioned\Versioned;
 
-class CheckDataObjectStatics extends MigrateDataTask
+class CheckDataObjectStatics extends MigrateDataTaskBase
 {
 
     /**
