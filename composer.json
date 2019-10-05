@@ -23,7 +23,8 @@
         }
     ],
     "require": {
-        "silverstripe/recipe-core": "~4@stable"
+        "silverstripe/recipe-core": "~4@stable",
+        "sunnysideup/flush": "dev/master"
     },
     "extra": {
         "autoload": {
