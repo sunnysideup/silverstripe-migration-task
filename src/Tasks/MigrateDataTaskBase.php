@@ -84,7 +84,7 @@ abstract class MigrateDataTaskBase extends BuildTask
      */
     protected function runUpdateQuery(string $sqlQuery, $indents = 1)
     {
-        $this->flushNow($sqlQuery);
+        $this->flushNow(str_replace('"', '`', $sqlQuery), 'created');
         try {
             $sqlResults = DB::query($sqlQuery);
             $prefix = str_repeat(' ... ', $indents);
