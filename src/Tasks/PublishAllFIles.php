@@ -27,6 +27,9 @@ class PublishAllFiles extends MigrateDataTaskBase
 
     protected $oneFileOnlyID = 0;
 
+    protected $enabled = true;
+
+
     /**
      * @param bool $b
      *
