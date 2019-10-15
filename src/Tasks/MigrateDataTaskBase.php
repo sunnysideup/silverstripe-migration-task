@@ -312,10 +312,7 @@ abstract class MigrateDataTaskBase extends BuildTask
     {
         if (! isset($this->_cacheTableExists[$tableName])) {
             $schema = $this->getSchema();
-            if ($this->_cacheTableExists[$tableName] = $schema->hasTable($tableName)) {
-                return true;
-            } else {
-            }
+            $this->_cacheTableExists[$tableName] = ($schema->hasTable($tableName) ? true : false);
         }
 
         return $this->_cacheTableExists[$tableName];
