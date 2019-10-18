@@ -72,7 +72,7 @@ class UserFormFixes extends MigrateDataTaskBase
             $this->flushNow('Publishing '.$object->getTitle());
             $isPublished = $object->IsPublished();
             $object->writeToStage(Versioned::DRAFT);
-            $object->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+            $object->publishRecursive();
             if (! $isPublished) {
                 $object->doUnpublish();
             }
@@ -130,7 +130,7 @@ class UserFormFixes extends MigrateDataTaskBase
         if ($object->hasMethod('writeToStage')) {
             $this->flushNow('... publishing: '.$object->ClassName.'.'.$object->getTitle());
             $object->writeToStage(Versioned::DRAFT);
-            $object->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+            $object->publishRecursive();
         } else {
             $this->flushNow('... writing: '.$object->ClassName.'.'.$object->getTitle());
             $object->write();

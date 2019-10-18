@@ -180,9 +180,9 @@ abstract class MigrateDataTaskBase extends BuildTask
                             ($publishItems->count() == 1 ? "" : "s") . "."
                         );
                         $publishItem->write();
-                        if ($publishItem->hasMethod('copyVersionToStage')) {
+                        if ($publishItem->hasMethod('publishRecursive')) {
                             $publishItem->doPublish();
-                            $publishItem->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+                            $publishItem->publishRecursive();
                             $this->flushNow('... DONE - PUBLISHED');
                         } else {
                             $this->flushNow('... DONE - WRITE ONLY');
