@@ -2,7 +2,6 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use App\DataObject\System;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\Control\Director;
 use SilverStripe\ORM\DB;
