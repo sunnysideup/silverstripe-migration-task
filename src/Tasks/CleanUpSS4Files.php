@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tasks;
+namespace Sunnysideup\MigrateData\Tasks;
 
 use App\DataObject\System;
 use SilverStripe\Dev\BuildTask;
