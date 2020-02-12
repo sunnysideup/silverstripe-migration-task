@@ -223,11 +223,11 @@ abstract class MigrateDataTaskBase extends BuildTask
     {
 
         if (!$this->tableExists($tableOld)) {
-            $this->flushNow("$tableOld (old table) does not exist", 'error');;
+            $this->flushNow("$tableOld (old table) does not exist", 'error');
         }
 
         if (!$this->tableExists($tableNew)) {
-            $this->flushNow("$tableNew (new table) does not exist", 'error');;
+            $this->flushNow("$tableNew (new table) does not exist", 'error');
         }
 
         try {
@@ -396,6 +396,4 @@ abstract class MigrateDataTaskBase extends BuildTask
 
         return $sqlQuery;
     }
-
-
 }
