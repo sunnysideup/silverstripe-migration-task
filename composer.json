@@ -26,11 +26,9 @@
         "silverstripe/recipe-core": "~4@stable",
         "sunnysideup/flush": "dev-master"
     },
-    "extra": {
-        "autoload": {
-            "psr-4": {
-                "Sunnysideup\\MigrateData\\": "src/"
-            }
+    "autoload": {
+        "psr-4": {
+            "Sunnysideup\\MigrateData\\": "src/"
         }
     }
 }
