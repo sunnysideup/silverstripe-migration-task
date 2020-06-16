@@ -9,4 +9,8 @@ class FixSheaDawsonLink extends MigrateDataTaskBase
     protected $description = 'Moves table and changes class names';
 
     protected $enabled = true;
+
+    protected function performMigration() {
+        return false;
+    }
 }

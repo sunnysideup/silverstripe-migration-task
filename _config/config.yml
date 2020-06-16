@@ -32,4 +32,4 @@ Sunnysideup\MigrateData\Tasks\FixSheaDawsonLink:
 
 
       post_sql_queries:
-        - 'UPDATE "LinkableLink" SET "ClassName" = \'Sheadawson\\Linkable\\Models\\Link\' WHERE ClassName = \'Link\';'
+        - 'UPDATE "LinkableLink" SET "ClassName" = ''Sheadawson\\Linkable\\Models\\Link'' WHERE ClassName = ''Link'';'
