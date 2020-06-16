@@ -2,7 +2,6 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\Assets\File;
 use SilverStripe\Control\Director;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
@@ -54,7 +53,6 @@ class CleanUpSS4Files extends BuildTask
             if (file_exists($fullName)) {
                 echo '.';
             } else {
-                $file = File::get()->byID($row['ID']);
                 DB::alteration_message('DELETING: ' . $fullName, 'deleted');
                 $sql = 'DELETE FROM File WHERE ID = ' . $row['ID'] . ';';
                 DB::query($sql);

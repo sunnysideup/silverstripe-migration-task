@@ -86,7 +86,7 @@ abstract class MigrateDataTaskBase extends BuildTask
     {
         $this->flushNow(str_replace('"', '`', $sqlQuery), 'created');
         try {
-            $sqlResults = DB::query($sqlQuery);
+            DB::query($sqlQuery);
             $prefix = str_repeat(' ... ', $indents);
             $this->flushNow($prefix . ' DONE ' . DB::affected_rows() . ' rows affected');
         } catch (Exception $e) {
@@ -144,12 +144,12 @@ abstract class MigrateDataTaskBase extends BuildTask
 
                 if (count($dataItem['new_fields']) !== count($dataItem['old_fields'])) {
                     user_error('Count of new fields does not match old fields');
-                    foreach ($dataItem['old_fields'] as $key => $value) {
+                    foreach ($dataItem['old_fields'] as $value) {
                         if (intval($value) === $value) {
                             $this->flushNow('Potential error in fields: ' . print_r($dataItem['old_fields'], 1), 'error');
                         }
                     }
-                    foreach ($dataItem['new_fields'] as $key => $value) {
+                    foreach ($dataItem['new_fields'] as $value) {
                         if (intval($value) === $value) {
                             $this->flushNow('Potential error in fields: ' . print_r($dataItem['new_fields'], 1), 'error');
                         }

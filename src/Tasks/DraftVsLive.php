@@ -72,7 +72,7 @@ class DraftVsLive extends MigrateDataTaskBase
         $liveRows = DB::query('SELECT * FROM ' . $liveTable . ' WHERE ID = ' . $draftRow['ID'] . ';');
         foreach ($liveRows as $liveRow) {
             $results = array_diff($draftRow, $liveRow) + array_diff($liveRow, $draftRow);
-            foreach ($results as $key => $value) {
+            foreach (array_keys($results) as $key) {
                 if (! isset($draftRow[$key])) {
                     $draftRow[$key] = '???';
                 }
@@ -114,7 +114,7 @@ class DraftVsLive extends MigrateDataTaskBase
             $tableA = 'LIVE';
         }
         $result = array_diff_key($rowA, $rowB);
-        foreach ($result as $key => $value) {
+        foreach (array_keys($result) as $key) {
             $this->missingColumns[$table][$key] = $key;
             $this->flushNow(
                 '... Found a column in the ' . $tableA . ' table that did not match the ' . $tableB . ' table: ' . $key,

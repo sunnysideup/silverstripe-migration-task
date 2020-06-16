@@ -73,7 +73,7 @@ class FixMissingFiles extends BuildTask
     {
         $this->flushNow(str_replace('"', '`', $sqlQuery), 'created');
         try {
-            $sqlResults = DB::query($sqlQuery);
+            DB::query($sqlQuery);
             $prefix = str_repeat(' ... ', $indents);
             $this->flushNow($prefix . ' DONE ' . DB::affected_rows() . ' rows affected');
         } catch (\Exception $e) {

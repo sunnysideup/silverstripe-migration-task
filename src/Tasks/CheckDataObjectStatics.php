@@ -67,7 +67,7 @@ class CheckDataObjectStatics extends MigrateDataTaskBase
             }
 
             $summaryFields = Config::inst()->get($objectClassName, 'summary_fields');
-            $searchableFields = Config::inst()->get($objectClassName, 'searchable_fields');
+            // $searchableFields = Config::inst()->get($objectClassName, 'searchable_fields');
             if (! empty($summaryFields)) {
                 $dbFields = array_keys(Config::inst()->get($objectClassName, 'db'));
                 if (count($dbFields) > 5) {
