@@ -1,0 +1,35 @@
+---
+Name: migration
+Only:
+  environment: 'dev'
+---
+
+Sunnysideup\MigrateData\Tasks\FixSheaDawsonLink:
+  items_to_migrate:
+    FixSheaDawsonLink:
+      pre_sql_queries: []
+
+      data:
+        -
+          old_table: 'Link'
+          new_table: 'LinkableLink'
+          simple_move_fields:
+             - ID
+             - ClassName
+             - LastEdited
+             - Created
+             - Anchor
+             - Title
+             - Type
+             - URL
+             - Email
+             - Phone
+             - OpenInNewWindow
+             - Template
+             - SiteTreeID
+             - FileID
+
+
+
+      post_sql_queries:
+        - 'UPDATE "LinkableLink" SET "ClassName" = \'Sheadawson\\Linkable\\Models\\Link\' WHERE ClassName = \'Link\';'

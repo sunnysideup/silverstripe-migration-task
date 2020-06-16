@@ -2,18 +2,15 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\Dev\BuildTask;
-use SilverStripe\Dev\Tasks\MigrateFileTask;
-use SilverStripe\Control\Director;
+use SilverStripe\AssetAdmin\Controller\AssetAdmin;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Folder;
-use SilverStripe\AssetAdmin\Controller\AssetAdmin;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Versioned\Versioned;
-use SilverStripe\Core\Injector\Injector;
 
-class PublishAllFiles extends MigrateDataTaskBase
+class PublishAllFIles extends MigrateDataTaskBase
 {
     protected $title = 'Publish All Files';
 
@@ -29,7 +26,6 @@ class PublishAllFiles extends MigrateDataTaskBase
 
     protected $enabled = true;
 
-
     /**
      * @param bool $b
      *
@@ -41,7 +37,6 @@ class PublishAllFiles extends MigrateDataTaskBase
 
         return $this;
     }
-
 
     /**
      * @param bool $b
@@ -64,12 +59,12 @@ class PublishAllFiles extends MigrateDataTaskBase
 
     protected function runForFolder($parentID)
     {
-        if($this->oneFolderOnlyID && $this->oneFolderOnlyID !== $parentID) {
+        if ($this->oneFolderOnlyID && $this->oneFolderOnlyID !== $parentID) {
             return;
         }
-        if($parentID) {
+        if ($parentID) {
             $folder = Folder::get()->byID($parentID);
-            $this->flushNow('<h3>Processing Folder: '.$folder->getFilename().'</h3>');
+            $this->flushNow('<h3>Processing Folder: ' . $folder->getFilename() . '</h3>');
         } else {
             $this->flushNow('<h3>Processing Root Folder</h3>');
         }
@@ -83,47 +78,47 @@ class PublishAllFiles extends MigrateDataTaskBase
         $result = $sqlQuery->execute();
         foreach ($result as $row) {
             $file = File::get()->byID($row['ID']);
-            if($file) {
+            if ($file) {
                 $name = $file->getFilename();
                 if (! $name) {
                     $file->write();
                     $name = $file->getFilename();
                 }
-                if($this->oneFileOnlyID && $this->oneFileOnlyID !== $file->ID) {
+                if ($this->oneFileOnlyID && $this->oneFileOnlyID !== $file->ID) {
                     continue;
                 }
                 if ($name) {
-                    if($this->updateLocation) {
+                    if ($this->updateLocation) {
                         $this->updateLocationForOneFile($file, $name);
                         $file = File::get()->byID($row['ID']);
                     }
                     try {
-                        if($file->exists()) {
-                            $this->flushNow('... Publishing: '.$name.', ID = '.$file->ID);
-                            if($this->generateThumbnails) {
+                        if ($file->exists()) {
+                            $this->flushNow('... Publishing: ' . $name . ', ID = ' . $file->ID);
+                            if ($this->generateThumbnails) {
                                 $this->admin->generateThumbnails($file);
                             }
                             $file->forceChange();
                             $file->write();
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
-                            $test = DB::query('SELECT COUNT(ID) FROM File_Live WHERE ID = '.$file->ID)->value();
-                            if(intval($test) === 0) {
-                                $this->flushNow('... error finding: '.$name, 'deleted');
+                            $test = DB::query('SELECT COUNT(ID) FROM File_Live WHERE ID = ' . $file->ID)->value();
+                            if (intval($test) === 0) {
+                                $this->flushNow('... error finding: ' . $name, 'deleted');
                             }
                         } else {
-                            $this->flushNow('... Error in publishing V2 ...'.print_r($file->toMap(), 1), 'deleted');
+                            $this->flushNow('... Error in publishing V2 ...' . print_r($file->toMap(), 1), 'deleted');
                         }
                     } catch (\Exception $e) {
-                        $this->flushNow('... Error in publishing V1 ...'.print_r($file->toMap(), 1), 'deleted');
+                        $this->flushNow('... Error in publishing V1 ...' . print_r($file->toMap(), 1), 'deleted');
                     }
                 } else {
-                    $this->flushNow('... Error in finding name for '.print_r($file->toMap(), 1), 'deleted');
+                    $this->flushNow('... Error in finding name for ' . print_r($file->toMap(), 1), 'deleted');
                 }
 
                 $file->destroy();
             }
 
-            if($file instanceof Folder) {
+            if ($file instanceof Folder) {
                 $this->runForFolder($file->ID);
             }
         }
@@ -131,11 +126,11 @@ class PublishAllFiles extends MigrateDataTaskBase
 
     protected function updateLocationForOneFile($file, $name)
     {
-        $originalDir = ASSETS_PATH.'/';
-        if (file_exists($originalDir.$name) && !is_dir($originalDir.$name)) {
-            if (!$file->getField('FileHash')) {
-                $hash = sha1_file($originalDir.$name);
-                $this->runUpdateQuery('UPDATE "File" SET "FileHash" = \''.$hash.'\' WHERE "ID" = \''.$file->ID.'\' LIMIT 1;');
+        $originalDir = ASSETS_PATH . '/';
+        if (file_exists($originalDir . $name) && ! is_dir($originalDir . $name)) {
+            if (! $file->getField('FileHash')) {
+                $hash = sha1_file($originalDir . $name);
+                $this->runUpdateQuery('UPDATE "File" SET "FileHash" = \'' . $hash . '\' WHERE "ID" = \'' . $file->ID . '\' LIMIT 1;');
             } else {
                 $hash = $file->FileHash;
             }
@@ -143,53 +138,50 @@ class PublishAllFiles extends MigrateDataTaskBase
             $targetDir = str_replace(
                 './',
                 '',
-                ASSETS_PATH .'/.protected/'. dirname($name)
-                    .'/'. substr($hash, 0, 10) . '/'
+                ASSETS_PATH . '/.protected/' . dirname($name)
+                    . '/' . substr($hash, 0, 10) . '/'
             );
 
-
-            if (!file_exists($targetDir)) {
+            if (! file_exists($targetDir)) {
                 mkdir($targetDir, 0755, true);
             }
 
-            $this->flushNow($originalDir . $name .' > '. $targetDir . basename($name), 'obsolete');
+            $this->flushNow($originalDir . $name . ' > ' . $targetDir . basename($name), 'obsolete');
 
             rename(
                 $originalDir . $name,
                 $targetDir . basename($name)
             );
         }
-
     }
 
-
     /**
-     * @param  null|int $parentID
+     * @param int|null $parentID
      */
     protected function compareCount($parentID = null)
     {
         $where = '';
-        if($parentID === null) {
+        if ($parentID === null) {
         } else {
-            $where = ' WHERE ParentID = '.$parentID;
+            $where = ' WHERE ParentID = ' . $parentID;
         }
-        $count1 = DB::query('SELECT COUNT("ID") FROM "File" '.$where)->value();
-        $count2 = DB::query('SELECT COUNT("ID") FROM "File_Live" '.$where)->value();
-        if($count1 === $count2) {
-            $this->flushNow('<h1>Draft and Live have the same amount of items '.$where.'</h1>', 'created');
+        $count1 = DB::query('SELECT COUNT("ID") FROM "File" ' . $where)->value();
+        $count2 = DB::query('SELECT COUNT("ID") FROM "File_Live" ' . $where)->value();
+        if ($count1 === $count2) {
+            $this->flushNow('<h1>Draft and Live have the same amount of items ' . $where . '</h1>', 'created');
         } else {
-            $this->flushNow('
-                Draft and Live DO NOT have the same amount of items '.$where.', '.$count1.' not equal '.$count2.'',
-                'deleted');
-            if($parentID === null) {
+            $this->flushNow(
+                '
+                Draft and Live DO NOT have the same amount of items ' . $where . ', ' . $count1 . ' not equal ' . $count2 . '',
+                'deleted'
+            );
+            if ($parentID === null) {
                 $parentIDs = File::get()->column('ParentID');
                 $parentIDs = array_unique($parentIDs);
-                foreach($parentIDs as $parentID){
+                foreach ($parentIDs as $parentID) {
                     $this->compareCount($parentID);
                 }
             }
         }
     }
-
-
 }

@@ -2,22 +2,20 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\ORM\DB;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\Queries\SQLSelect;
-use SilverStripe\ORM\DataObjectSchema;
-use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\ClassInfo;
-use SilverStripe\Core\Environment;
-use SilverStripe\Core\Injector\Injector;
-use SilverStripe\Dev\BuildTask;
-use SilverStripe\Control\Director;
-use SilverStripe\Versioned\Versioned;
-use SilverStripe\Versioned\ChangeSet;
-use SilverStripe\Versioned\ChangeSetItem;
+use SilverStripe\ORM\DataObject;
 
 class WriteAllDataObjects extends MigrateDataTaskBase
 {
+    protected $title = 'Creates one of each DataObjects and then deletes it again';
+
+    protected $description = 'Use this task to find errors in your setup';
+
+    protected $enabled = true;
+
+    protected $listOfFieldTypesRaw = [];
+
+    protected $listOfFieldTypesClean = [];
 
     /**
      * example:
@@ -77,83 +75,22 @@ class WriteAllDataObjects extends MigrateDataTaskBase
      */
     private static $required_defaults = [];
 
-    protected $title = 'Creates one of each DataObjects and then deletes it again';
-
-    protected $description = 'Use this task to find errors in your setup';
-
-    protected $enabled = true;
-
-    protected $listOfFieldTypesRaw = [];
-
-    protected $listOfFieldTypesClean = [];
-
-    protected function performMigration()
-    {
-        $ignoreForCreationArray = $this->Config()->get('objects_to_ignore_for_creation');
-        $ignoreForUpdatesArray = $this->Config()->get('objects_to_ignore_for_updates');
-        $defaults = $this->Config()->get('objects_to_ignore');
-
-        //make a list of all classes
-        $objectClassNames = ClassInfo::subclassesFor(DataObject::class);
-        $this->flushNow(' ');
-        $this->flushNowLine();
-        $this->flushNow('FOUND '.count($objectClassNames). ' classes');
-        $this->flushNowLine();
-        $this->flushNowLine();
-        foreach ($objectClassNames as $objectClassName) {
-            $this->flushNowLine();
-            $this->flushNow($objectClassName.': ');
-            $this->flushNowLine();
-            if(in_array($objectClassName, $ignoreForCreationArray)) {
-                $this->flushNow('... IGNORING ');
-            } else {
-                $defaultFields = isset($defaults[$objectClassName]) ?
-                    $defaults[$objectClassName] : [];
-                $this->flushNow('... CREATING ');
-                $obj = $objectClassName::create($defaultFields);
-                $this->flushNow('... WRITING ');
-                $obj->write();
-                $fields = $obj->Config()->get('db');
-                if(in_array($objectClassName, $ignoreForUpdatesArray)) {
-                    $this->flushNow('... IGNORING UPDATE');
-                } else {
-                    $this->flushNow('... UPDATING ');
-                    foreach($fields as $name => $type) {
-                        $value = $this->getExampleValue($obj, $name, $type);
-                        if($value !== null) {
-                            $obj->$name = $value;
-                        }
-                    }
-                    $obj->write();
-                }
-                $this->flushNow('... DELETING ');
-                $obj->delete();
-            }
-        }
-        $this->flushNowLine();
-        $this->flushNow(print_r($this->listOfFieldTypesRaw, 1));
-        $this->flushNowLine();
-        $this->flushNow(print_r($this->listOfFieldTypesClean, 1));
-        $this->flushNowLine();
-    }
-
     public function getExampleValue($obj, $name, $type)
     {
         $value = null;
         $ignoreList = $this->Config()->get('fields_to_ignore_for_updates');
-        if(isset($this->listOfFieldTypesRaw[$type])) {
+        if (isset($this->listOfFieldTypesRaw[$type])) {
             $this->listOfFieldTypesRaw[$type]++;
         } else {
             $this->listOfFieldTypesRaw[$type] = 1;
         }
-        if(in_array($name, $ignoreList)) {
-            $this->flushNow('... ... SKIPPING '.$name);
+        if (in_array($name, $ignoreList, true)) {
+            $this->flushNow('... ... SKIPPING ' . $name);
         } else {
             $typeArray = explode('(', $type);
             $realType = $typeArray[0];
 
-
-            switch($realType) {
+            switch ($realType) {
                 case 'Varchar':
                 case 'Text':
                     $value = 'TestValue';
@@ -184,7 +121,7 @@ class WriteAllDataObjects extends MigrateDataTaskBase
                     $value = Date('Y-m-d');
                     break;
             }
-            if(isset($this->listOfFieldTypesClean[$realType])) {
+            if (isset($this->listOfFieldTypesClean[$realType])) {
                 $this->listOfFieldTypesClean[$realType]++;
             } else {
                 $this->listOfFieldTypesClean[$realType] = 1;
@@ -194,4 +131,53 @@ class WriteAllDataObjects extends MigrateDataTaskBase
         return $value;
     }
 
+    protected function performMigration()
+    {
+        $ignoreForCreationArray = $this->Config()->get('objects_to_ignore_for_creation');
+        $ignoreForUpdatesArray = $this->Config()->get('objects_to_ignore_for_updates');
+        $defaults = $this->Config()->get('objects_to_ignore');
+
+        //make a list of all classes
+        $objectClassNames = ClassInfo::subclassesFor(DataObject::class);
+        $this->flushNow(' ');
+        $this->flushNowLine();
+        $this->flushNow('FOUND ' . count($objectClassNames) . ' classes');
+        $this->flushNowLine();
+        $this->flushNowLine();
+        foreach ($objectClassNames as $objectClassName) {
+            $this->flushNowLine();
+            $this->flushNow($objectClassName . ': ');
+            $this->flushNowLine();
+            if (in_array($objectClassName, $ignoreForCreationArray, true)) {
+                $this->flushNow('... IGNORING ');
+            } else {
+                $defaultFields = isset($defaults[$objectClassName]) ?
+                    $defaults[$objectClassName] : [];
+                $this->flushNow('... CREATING ');
+                $obj = $objectClassName::create($defaultFields);
+                $this->flushNow('... WRITING ');
+                $obj->write();
+                $fields = $obj->Config()->get('db');
+                if (in_array($objectClassName, $ignoreForUpdatesArray, true)) {
+                    $this->flushNow('... IGNORING UPDATE');
+                } else {
+                    $this->flushNow('... UPDATING ');
+                    foreach ($fields as $name => $type) {
+                        $value = $this->getExampleValue($obj, $name, $type);
+                        if ($value !== null) {
+                            $obj->{$name} = $value;
+                        }
+                    }
+                    $obj->write();
+                }
+                $this->flushNow('... DELETING ');
+                $obj->delete();
+            }
+        }
+        $this->flushNowLine();
+        $this->flushNow(print_r($this->listOfFieldTypesRaw, 1));
+        $this->flushNowLine();
+        $this->flushNow(print_r($this->listOfFieldTypesClean, 1));
+        $this->flushNowLine();
+    }
 }

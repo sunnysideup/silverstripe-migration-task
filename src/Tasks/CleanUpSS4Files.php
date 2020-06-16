@@ -2,14 +2,13 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\Dev\BuildTask;
-use SilverStripe\Control\Director;
-use SilverStripe\ORM\DB;
 use SilverStripe\Assets\File;
+use SilverStripe\Control\Director;
+use SilverStripe\Dev\BuildTask;
+use SilverStripe\ORM\DB;
 
 /**
  * Update all systems
- *
  *
  * Class UpdateSystemsWithProductCodeVariantKeywords
  */
@@ -25,7 +24,6 @@ class CleanUpSS4Files extends BuildTask
      */
     protected $description = 'You can run this script straight after an upgrade to remove files that are not physically present.';
 
-
     /**
      * Method to save all System dataobjects and trigger the onBeforeWrite() event handler.
      */
@@ -39,7 +37,7 @@ class CleanUpSS4Files extends BuildTask
         ';
         $rows = DB::query($sql);
         echo '<h2>Files that are not published</h2>';
-        foreach($rows as $row) {
+        foreach ($rows as $row) {
             DB::alteration_message($row['Filename'], 'deleted');
         }
 
@@ -50,17 +48,17 @@ class CleanUpSS4Files extends BuildTask
                 "ClassName" = \'SilverStripe\\\Assets\\\File\'
             ORDER BY Filename ASC';
         $rows = DB::query($sql);
-        $baseDir = Director::baseFolder().'/public/';
-        foreach($rows as $row) {
-            $fullName = $baseDir.$row['Filename'];
-            if(file_exists($fullName)) {
+        $baseDir = Director::baseFolder() . '/public/';
+        foreach ($rows as $row) {
+            $fullName = $baseDir . $row['Filename'];
+            if (file_exists($fullName)) {
                 echo '.';
             } else {
                 $file = File::get()->byID($row['ID']);
-                DB::alteration_message('DELETING: '.$fullName, 'deleted');
-                $sql = 'DELETE FROM File WHERE ID = '.$row['ID'].';';
+                DB::alteration_message('DELETING: ' . $fullName, 'deleted');
+                $sql = 'DELETE FROM File WHERE ID = ' . $row['ID'] . ';';
                 DB::query($sql);
-                $sql = 'DELETE FROM File_Live WHERE ID = '.$row['ID'].';';
+                $sql = 'DELETE FROM File_Live WHERE ID = ' . $row['ID'] . ';';
                 DB::query($sql);
             }
         }

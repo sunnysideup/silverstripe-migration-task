@@ -2,19 +2,17 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\ORM\DB;
 use SilverStripe\Dev\BuildTask;
+use SilverStripe\ORM\DB;
 use Sunnysideup\Flush\FlushNow;
 
 /**
  * Update all systems
  *
- *
  * Class UpdateSystemsWithProductCodeVariantKeywords
  */
 class FixMissingFiles extends BuildTask
 {
-
     use FlushNow;
 
     /**
@@ -28,7 +26,6 @@ class FixMissingFiles extends BuildTask
     protected $description = 'When duplicate records exist for the same file in SS3 the silverstripe
 		data migration task will only update one. Causing the other files to "go missing". This task fixes that';
 
-
     /**
      * Fix broken file references and publish them
      */
@@ -37,7 +34,7 @@ class FixMissingFiles extends BuildTask
         $sql = 'SELECT * FROM File WHERE ClassName != \'SilverStripe\\Assets\\Folder\' AND FileFilename is NULL';
         $broken_rows = DB::query($sql);
 
-        foreach($broken_rows as $row) {
+        foreach ($broken_rows as $row) {
             $sql = "
             SELECT * FROM File WHERE
                 ClassName != 'SilverStripe\\Assets\\Folder' AND
@@ -47,19 +44,19 @@ class FixMissingFiles extends BuildTask
             ";
             $result = DB::query($sql);
 
-            if($healthy_row = $result->first()) {
-                echo "Fixing" . $healthy_row['Name'];
+            if ($healthy_row = $result->first()) {
+                echo 'Fixing' . $healthy_row['Name'];
                 $this->runUpdateQuery(
-                    'UPDATE "'.'File'.'"
-                    SET "'.'File'.'"."'.'FileHash'.'" = \''.$healthy_row['FileHash'].'\'
-                    WHERE ID = '.$row['ID'],
+                    'UPDATE "' . 'File' . '"
+                    SET "' . 'File' . '"."' . 'FileHash' . '" = \'' . $healthy_row['FileHash'] . '\'
+                    WHERE ID = ' . $row['ID'],
                     2
                 );
 
                 $this->runUpdateQuery(
-                    'UPDATE "'.'File'.'"
-                    SET "'.'File'.'"."'.'FileFilename'.'" = \''.$healthy_row['FileFilename'].'\'
-                    WHERE ID = '.$row['ID'],
+                    'UPDATE "' . 'File' . '"
+                    SET "' . 'File' . '"."' . 'FileFilename' . '" = \'' . $healthy_row['FileFilename'] . '\'
+                    WHERE ID = ' . $row['ID'],
                     2
                 );
 
@@ -69,9 +66,8 @@ class FixMissingFiles extends BuildTask
     }
 
     /**
-     *
-     * @param  array $queries list of queries
-     * @param  string $name what is this list about?
+     * @param  array $sqlQuery list of queries
+     * @param  string $indents what is this list about?
      */
     protected function runUpdateQuery(string $sqlQuery, $indents = 1)
     {
@@ -81,48 +77,44 @@ class FixMissingFiles extends BuildTask
             $prefix = str_repeat(' ... ', $indents);
             $this->flushNow($prefix . ' DONE ' . DB::affected_rows() . ' rows affected');
         } catch (\Exception $e) {
-            $this->flushNow($prefix . "ERROR: Unable to run '$sqlQuery'", 'deleted');
-            $this->flushNow("" . $e->getMessage() . "", 'deleted');
+            $this->flushNow($prefix . "ERROR: Unable to run '${sqlQuery}'", 'deleted');
+            $this->flushNow('' . $e->getMessage() . '', 'deleted');
         }
     }
 
     /**
      * Take a file record and publish it (enter it to File_Live)
      */
-    protected function publishFile($fileId) {
+    protected function publishFile($fileId)
+    {
         $sql = "
-            SELECT * FROM File_Live WHERE ID = $fileId
+            SELECT * FROM File_Live WHERE ID = ${fileId}
         ";
         $result = DB::query($sql);
 
-        if(!$result->numRecords()) {
-
+        if (! $result->numRecords()) {
             $sql = "
-                SELECT * FROM File WHERE ID = $fileId
+                SELECT * FROM File WHERE ID = ${fileId}
             ";
             $file_record = DB::query($sql)->first();
 
-            DB::query("
+            DB::query('
                 INSERT IGNORE INTO `File_Live` (`ID`, `ClassName`, `LastEdited`, `Created`, `Name`, `Title`, `ShowInSearch`,
                 `CanViewType`, `ParentID`, `OwnerID`, `Version`, `CanEditType`, `FileHash`, `FileFilename`, `FileVariant`)
-                VALUES (".$file_record['ID'].", '".str_replace("\\", "\\\\", $file_record['ClassName'])."', '".$file_record['LastEdited']."',
-                '".$file_record['Created']."', '".$file_record['Name']."', '".$file_record['Title']."', '".$file_record['ShowInSearch']."',
-                '".$file_record['CanViewType']."', '".$file_record['ParentID']."', '".$file_record['OwnerID']."', '".$file_record['Version']."',
-                '".$file_record['CanEditType']."', '".$file_record['FileHash']."', '".$file_record['FileFilename']."', NULL)
+                VALUES (' . $file_record['ID'] . ", '" . str_replace('\\', '\\\\', $file_record['ClassName']) . "', '" . $file_record['LastEdited'] . "',
+                '" . $file_record['Created'] . "', '" . $file_record['Name'] . "', '" . $file_record['Title'] . "', '" . $file_record['ShowInSearch'] . "',
+                '" . $file_record['CanViewType'] . "', '" . $file_record['ParentID'] . "', '" . $file_record['OwnerID'] . "', '" . $file_record['Version'] . "',
+                '" . $file_record['CanEditType'] . "', '" . $file_record['FileHash'] . "', '" . $file_record['FileFilename'] . "', NULL)
             ");
 
-            echo "
+            echo '
                 INSERT INTO `File_Live` (`ID`, `ClassName`, `LastEdited`, `Created`, `Name`, `Title`, `ShowInSearch`,
                 `CanViewType`, `ParentID`, `OwnerID`, `Version`, `CanEditType`, `FileHash`, `FileFilename`, `FileVariant`)
-                VALUES (".$file_record['ID'].", '".str_replace("\\", "\\\\", $file_record['ClassName'])."', '".$file_record['LastEdited']."',
-                '".$file_record['Created']."', '".$file_record['Name']."', '".$file_record['Title']."', '".$file_record['ShowInSearch']."',
-                '".$file_record['CanViewType']."', '".$file_record['ParentID']."', '".$file_record['OwnerID']."', '".$file_record['Version']."',
-                '".$file_record['CanEditType']."', '".$file_record['FileHash']."', '".$file_record['FileFilename']."', NULL)
+                VALUES (' . $file_record['ID'] . ", '" . str_replace('\\', '\\\\', $file_record['ClassName']) . "', '" . $file_record['LastEdited'] . "',
+                '" . $file_record['Created'] . "', '" . $file_record['Name'] . "', '" . $file_record['Title'] . "', '" . $file_record['ShowInSearch'] . "',
+                '" . $file_record['CanViewType'] . "', '" . $file_record['ParentID'] . "', '" . $file_record['OwnerID'] . "', '" . $file_record['Version'] . "',
+                '" . $file_record['CanEditType'] . "', '" . $file_record['FileHash'] . "', '" . $file_record['FileFilename'] . "', NULL)
             ";
         }
-
-
-
-
     }
 }

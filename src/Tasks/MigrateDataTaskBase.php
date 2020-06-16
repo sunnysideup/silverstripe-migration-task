@@ -2,21 +2,17 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\ORM\DB;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
 use SilverStripe\Dev\BuildTask;
-use SilverStripe\Control\Director;
-use SilverStripe\Versioned\Versioned;
-use SilverStripe\View\Requirements;
+use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\DB;
+use SilverStripe\ORM\Queries\SQLSelect;
 
 use Sunnysideup\Flush\FlushNow;
 
 abstract class MigrateDataTaskBase extends BuildTask
 {
-
     use FlushNow;
 
     protected $title = 'Abstract Migration Class';
@@ -24,6 +20,14 @@ abstract class MigrateDataTaskBase extends BuildTask
     protected $description = 'Please extend this class';
 
     protected $enabled = false;
+
+    protected $_schema = null;
+
+    protected $_schemaForDataObject = null;
+
+    private $_cacheTableExists = [];
+
+    private $_cacheFieldExists = [];
 
     public function run($request)
     {
@@ -57,18 +61,15 @@ abstract class MigrateDataTaskBase extends BuildTask
     /**
      * Queries the config for Migrate definitions, and runs migrations
      * if you extend this task then overwrite it this method
-     *
      */
     abstract protected function performMigration();
 
     /**
-     *
      * @param  array $queries list of queries
      * @param  string $name what is this list about?
      */
     protected function runSQLQueries($queries, $name = 'UPDATE QUERIES')
     {
-
         if ($queries) {
             $this->flushNow('<h3>Performing ' . $name . ' Queries</h3>');
             foreach ($queries as $sqlQuery) {
@@ -78,9 +79,8 @@ abstract class MigrateDataTaskBase extends BuildTask
     }
 
     /**
-     *
-     * @param  array $queries list of queries
-     * @param  string $name what is this list about?
+     * @param  array $sqlQuery list of queries
+     * @param  string $indents what is this list about?
      */
     protected function runUpdateQuery(string $sqlQuery, $indents = 1)
     {
@@ -90,8 +90,8 @@ abstract class MigrateDataTaskBase extends BuildTask
             $prefix = str_repeat(' ... ', $indents);
             $this->flushNow($prefix . ' DONE ' . DB::affected_rows() . ' rows affected');
         } catch (Exception $e) {
-            $this->flushNow($prefix . "ERROR: Unable to run '$sqlQuery'", 'deleted');
-            $this->flushNow("" . $e->getMessage() . "", 'deleted');
+            $this->flushNow($prefix . "ERROR: Unable to run '${sqlQuery}'", 'deleted');
+            $this->flushNow('' . $e->getMessage() . '', 'deleted');
         }
     }
 
@@ -114,19 +114,19 @@ abstract class MigrateDataTaskBase extends BuildTask
         if ($data) {
             $this->flushNow('<h3>Migrating data - Core Migration</h3>');
             foreach ($data as $dataItem) {
-                if (!isset($dataItem['include_inserts'])) {
+                if (! isset($dataItem['include_inserts'])) {
                     $dataItem['include_inserts'] = true;
                 }
-                if (!isset($dataItem['leftJoin'])) {
+                if (! isset($dataItem['leftJoin'])) {
                     $dataItem['leftJoin'] = [];
                 }
-                if (!isset($dataItem['where'])) {
+                if (! isset($dataItem['where'])) {
                     $dataItem['where'] = [];
                 }
-                if (!isset($dataItem['include_inserts'])) {
+                if (! isset($dataItem['include_inserts'])) {
                     $dataItem['include_inserts'] = true;
                 }
-                if (!isset($dataItem['new_table'])) {
+                if (! isset($dataItem['new_table'])) {
                     $dataItem['new_table'] = $dataItem['old_table'];
                 }
                 $dataItem['old_fields'] = [];
@@ -145,12 +145,12 @@ abstract class MigrateDataTaskBase extends BuildTask
                 if (count($dataItem['new_fields']) !== count($dataItem['old_fields'])) {
                     user_error('Count of new fields does not match old fields');
                     foreach ($dataItem['old_fields'] as $key => $value) {
-                        if (intval($value) == $value) {
+                        if (intval($value) === $value) {
                             $this->flushNow('Potential error in fields: ' . print_r($dataItem['old_fields'], 1), 'error');
                         }
                     }
                     foreach ($dataItem['new_fields'] as $key => $value) {
-                        if (intval($value) == $value) {
+                        if (intval($value) === $value) {
                             $this->flushNow('Potential error in fields: ' . print_r($dataItem['new_fields'], 1), 'error');
                         }
                     }
@@ -170,12 +170,10 @@ abstract class MigrateDataTaskBase extends BuildTask
     }
 
     /**
-     *
      * @param  array $publishClasses list of class names to write / publish
      */
     protected function runPublishClasses($publishClasses)
     {
-
         if ($publishClasses) {
             $this->flushNow('<h3>Publish classes</h3>');
             foreach ($publishClasses as $publishClass) {
@@ -186,10 +184,10 @@ abstract class MigrateDataTaskBase extends BuildTask
                     foreach ($publishItems as $publishItem) {
                         $count++;
                         $this->flushNow(
-                            "Publishing " . $count . ' of ' . $publishItems->count() .
-                                " " .
+                            'Publishing ' . $count . ' of ' . $publishItems->count() .
+                                ' ' .
                                 $publishClass .
-                                " item" . ($publishItems->count() == 1 ? "" : "s") . "."
+                                ' item' . ($publishItems->count() === 1 ? '' : 's') . '.'
                         );
                         $publishItem->write();
                         if ($publishItem->hasMethod('publishRecursive')) {
@@ -201,13 +199,12 @@ abstract class MigrateDataTaskBase extends BuildTask
                         }
                     }
                 } catch (Exception $e) {
-                    $this->flushNow("Unable to publish " . $publishClass . "", 'error');
-                    $this->flushNow("" . $e->getMessage() . "", 'error');
+                    $this->flushNow('Unable to publish ' . $publishClass . '', 'error');
+                    $this->flushNow('' . $e->getMessage() . '', 'error');
                 }
             }
         }
     }
-
 
     /**
      * Migrates data from one table to another
@@ -221,13 +218,12 @@ abstract class MigrateDataTaskBase extends BuildTask
      */
     protected function migrateSimple($includeInserts, $tableOld, $tableNew, $fieldNamesOld, $fieldNamesNew, $leftJoin, $where)
     {
-
-        if (!$this->tableExists($tableOld)) {
-            $this->flushNow("$tableOld (old table) does not exist", 'error');
+        if (! $this->tableExists($tableOld)) {
+            $this->flushNow("${tableOld} (old table) does not exist", 'error');
         }
 
-        if (!$this->tableExists($tableNew)) {
-            $this->flushNow("$tableNew (new table) does not exist", 'error');
+        if (! $this->tableExists($tableNew)) {
+            $this->flushNow("${tableNew} (new table) does not exist", 'error');
         }
 
         try {
@@ -241,7 +237,7 @@ abstract class MigrateDataTaskBase extends BuildTask
             //add a new line using the ID as identifier
             foreach ($oldEntries as $oldEntry) {
                 if ($includeInserts) {
-                    if (!in_array($oldEntry['ID'], $newEntryIDs)) {
+                    if (! in_array($oldEntry['ID'], $newEntryIDs, true)) {
                         $this->flushNow('Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.');
                         $this->runUpdateQuery('INSERT INTO "' . $tableNew . '" ("ID") VALUES (' . $oldEntry['ID'] . ');');
                     }
@@ -275,7 +271,7 @@ abstract class MigrateDataTaskBase extends BuildTask
                 if (count($fieldNamesNew)) {
                     $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
                     $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
-                    if (substr($tableNew, -9) == '_versions') {
+                    if (substr($tableNew, -9) === '_versions') {
                         $updateQuery .= ' AND "tablenew"."RecordID" = "tableold"."RecordID" ';
                         // also link to RecordID ...
                     }
@@ -285,42 +281,37 @@ abstract class MigrateDataTaskBase extends BuildTask
                         if ($i > 0) {
                             $updateQuery .= ', ';
                         }
-                        $updateQuery .=  '"tablenew"."' . $fieldNamesNew[$i] . '" = "tableold"."' . $fieldNamesOld[$i] . '" ';
+                        $updateQuery .= '"tablenew"."' . $fieldNamesNew[$i] . '" = "tableold"."' . $fieldNamesOld[$i] . '" ';
                     }
                     $updateQuery .= 'WHERE "tablenew"."ID" ' . $wherePhrase . ';';
                     $this->flushNow(str_replace($wherePhrase, '........', $updateQuery));
-                    $sqlResults = $this->runUpdateQuery($updateQuery, 1);
+                    $this->runUpdateQuery($updateQuery, 1);
                 }
             }
         } catch (Exception $e) {
-            $this->flushNow("Unable to migrate $tableOld to $tableNew.", 'error');
+            $this->flushNow("Unable to migrate ${tableOld} to ${tableNew}.", 'error');
             $this->flushNow($e->getMessage(), 'error');
         }
     }
-
 
     protected function makeTableObsolete($tableName): bool
     {
         $schema = $this->getSchema();
         if ($this->tableExists($tableName)) {
-            if (!$this->tableExists('_obsolete_' . $tableName)) {
+            if (! $this->tableExists('_obsolete_' . $tableName)) {
                 $schema->dontRequireTable($tableName);
                 return true;
-            } else {
-                $this->flushNow('Table ' . $tableName . ' is already obsolete');
             }
+            $this->flushNow('Table ' . $tableName . ' is already obsolete');
         } else {
             $this->flushNow('Table ' . $tableName . ' does not exist.');
         }
         return false;
     }
 
-
-    private $_cacheTableExists = [];
-
     protected function tableExists($tableName): bool
     {
-        if (!isset($this->_cacheTableExists[$tableName])) {
+        if (! isset($this->_cacheTableExists[$tableName])) {
             $schema = $this->getSchema();
             $this->_cacheTableExists[$tableName] = ($schema->hasTable($tableName) ? true : false);
         }
@@ -328,13 +319,10 @@ abstract class MigrateDataTaskBase extends BuildTask
         return $this->_cacheTableExists[$tableName];
     }
 
-
-    private $_cacheFieldExists = [];
-
     protected function fieldExists($tableName, $fieldName): bool
     {
         $key = $tableName . '_' . $fieldName;
-        if (!isset($this->_cacheFieldExists[$key])) {
+        if (! isset($this->_cacheFieldExists[$key])) {
             $schema = $this->getSchema();
             $fieldList = $schema->fieldList($tableName);
 
@@ -349,8 +337,6 @@ abstract class MigrateDataTaskBase extends BuildTask
         $this->getSchema()->dontRequireField($table, $oldFieldName, $newFieldName);
     }
 
-    protected $_schema = null;
-
     protected function getSchema()
     {
         if ($this->_schema === null) {
@@ -361,8 +347,6 @@ abstract class MigrateDataTaskBase extends BuildTask
         }
         return $this->_schema;
     }
-
-    protected $_schemaForDataObject = null;
 
     protected function getSchemaForDataObject()
     {
@@ -392,8 +376,6 @@ abstract class MigrateDataTaskBase extends BuildTask
         }
 
         $sqlSelect->setOrderBy($tableName . '.ID');
-        $sqlQuery = $sqlSelect->execute();
-
-        return $sqlQuery;
+        return $sqlSelect->execute();
     }
 }

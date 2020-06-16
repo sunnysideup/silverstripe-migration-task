@@ -6,7 +6,6 @@ use SilverStripe\Core\Config\Config;
 
 use SilverStripe\ORM\DB;
 use SilverStripe\Versioned\Versioned;
-use Sunnysideup\MigrateData\Tasks\MigrateDataTask;
 
 /**
  * Used to debug a QueueJob
@@ -29,7 +28,6 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
         from comma separated strings to JSON and then to Many Many';
 
     protected $enabled = true;
-
 
     protected $sanitiseCharList = [
         '"',
@@ -64,7 +62,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     public function performMigration()
     {
         $dataToFix = $this->Config()->data_to_fix;
-        if(count($dataToFix) === 0) {
+        if (count($dataToFix) === 0) {
             user_error('You need to specify at least some data to fix!');
         }
         for ($i = 1; $i < 3; $i++) {

@@ -2,8 +2,6 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\ORM\DB;
-use SilverStripe\Dev\BuildTask;
 use SilverStripe\Control\Director;
 
 /**
@@ -12,12 +10,14 @@ use SilverStripe\Control\Director;
  */
 class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
 {
-
     /**
      * @var string
      */
-    protected $title = "Load your list of class names";
-    protected $description = "Upgrade ONLY!";
+    protected $title = 'Load your list of class names';
+
+    protected $description = 'Upgrade ONLY!';
+
+    protected $enabled = true;
 
     private static $folders_to_ignore = [
         'public',
@@ -25,8 +25,6 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
         'themes',
         'vendor',
     ];
-
-    protected $enabled = true;
 
     private static $files_to_ignore = [
         'database.legacy.yml',
@@ -39,15 +37,15 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
     public function performMigration()
     {
         $count = 0;
-        $subDirs = $this->getSubDirectories(Director::baseFolder().'/');
+        $subDirs = $this->getSubDirectories(Director::baseFolder() . '/');
         $ymlFiles = [];
         foreach ($subDirs as $subDir) {
             $subDir = rtrim($subDir, '/') . '/';
-            $fullSubDir = $subDir.'_config/';
+            $fullSubDir = $subDir . '_config/';
             if (file_exists($fullSubDir)) {
                 $toAdds = $this->getYMLFiles($fullSubDir);
                 foreach ($toAdds as $toAdd) {
-                    if(! in_array(basename($toAdd),$this->Config()->get('files_to_ignore'))) {
+                    if (! in_array(basename($toAdd), $this->Config()->get('files_to_ignore'), true)) {
                         $ymlFiles[] = $toAdd;
                     }
                 }
@@ -55,20 +53,25 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
         }
         foreach ($ymlFiles as $fileName) {
             $this->flushNowLine();
-            $this->flushNow('STARTING TESTING: '.$fileName.'');
+            $this->flushNow('STARTING TESTING: ' . $fileName . '');
             $this->flushNowLine();
-            $count=0;
+            $count = 0;
             $alreadySet = [];
             if (! file_exists($fileName)) {
-                die(' Could not find '.$fileName);
+                die(' Could not find ' . $fileName);
             }
             $fp = fopen($fileName, 'r');
-            while ($line = stream_get_line($fp, 1024 * 1024, "\n")) {
+            $hasLine = true;
+            while ($hasLine) {
+                $line = stream_get_line($fp, 1024 * 1024, "\n");
+                if (! $line) {
+                    break;
+                }
                 $count++;
                 $isProperty = false;
                 // $this->flushNow( '...';
                 //skip lines that are indented
-                if (substr($line, 0, 1) == ' ') {
+                if (substr($line, 0, 1) === ' ') {
                     $isProperty = true;
                 }
 
@@ -76,41 +79,41 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                     $className = end($alreadySet);
                     if ($className && class_exists($className)) {
                         if (strpos($line, ':')) {
-                            $myItems = explode(":", $line);
-                            if (count($myItems) == 2 && $myItems[0] && $myItems[1]) {
+                            $myItems = explode(':', $line);
+                            if (count($myItems) === 2 && $myItems[0] && $myItems[1]) {
                                 $property = trim($myItems[0]);
                                 $property = trim($myItems[0], '\'');
                                 $property = trim($myItems[0], '"');
                                 if (strpos($property, '\\')) {
                                     if (! class_exists($property)) {
                                         $this->flushNow('
-ERROR '.$className.'.'.$property.' may not exist as class name but looks like one.<br>');
+ERROR ' . $className . '.' . $property . ' may not exist as class name but looks like one.<br>');
                                     }
                                 } else {
                                     if (strpos($property, '*')) {
                                         $this->flushNow('
-ERROR '.$className.'.'.$property.' contains *.<br>');
+ERROR ' . $className . '.' . $property . ' contains *.<br>');
                                     } else {
                                         if (! property_exists($className, $property)) {
                                             $this->flushNow('
-ERROR '.$className.'.'.$property.' property could not be found<br>');
+ERROR ' . $className . '.' . $property . ' property could not be found<br>');
                                         } else {
                                             $this->flushNow('
-SUCCESS '.$className.'.'.$property.'');
+SUCCESS ' . $className . '.' . $property . '');
                                         }
                                     }
                                 }
                             } else {
                                 $this->flushNow('
-    '.$line.' ... not two items<br>');
+    ' . $line . ' ... not two items<br>');
                             }
                         } else {
                             $this->flushNow('
-'.$line.' ... no colon<br>');
+' . $line . ' ... no colon<br>');
                         }
                     } elseif ($className) {
                         $this->flushNow('
-COULD NOT FIND '.$className . '<br>');
+COULD NOT FIND ' . $className . '<br>');
                     }
                 } else {
                     if (! strpos($line, '\\')) {
@@ -124,13 +127,13 @@ COULD NOT FIND '.$className . '<br>');
                     if (isset($alreadySet[$line])) {
                         $this->flushNow('
 
-ERROR: Two mentions of '.$line . '<br>');
+ERROR: Two mentions of ' . $line . '<br>');
                     } else {
                         $alreadySet[$line] = $line;
                         if (! class_exists($line)) {
                             $this->flushNow('
 
-ERROR: Could not find class '.$line . '<br>');
+ERROR: Could not find class ' . $line . '<br>');
                         }
                     }
                 }
@@ -138,10 +141,9 @@ ERROR: Could not find class '.$line . '<br>');
             }
             fclose($fp);
             $this->flushNowLine();
-            $this->flushNow(''.$count.' lines');
+            $this->flushNow('' . $count . ' lines');
             $this->flushNowLine();
-
-            $count=0;
+            $count = 0;
         }
     }
 
@@ -151,11 +153,11 @@ ERROR: Could not find class '.$line . '<br>');
         $ignore = $this->Config()->folders_to_ignore;
         $dir = rtrim($dir, '/') . '/';
         // Get and add directories of $dir
-        $directories = array_filter(glob($dir.'*'), 'is_dir');
+        $directories = array_filter(glob($dir . '*'), 'is_dir');
         // $subDir = array_merge($subDir, $directories);
         // Foreach directory, recursively get and add sub directories
         foreach ($directories as $directory) {
-            if (!in_array(basename($directory), $ignore)) {
+            if (! in_array(basename($directory), $ignore, true)) {
                 $subDirs[] = $directory;
             }
         }
@@ -169,10 +171,10 @@ ERROR: Could not find class '.$line . '<br>');
     {
         $dir = rtrim($dir, '/') . '/';
         $files = [];
-        foreach (glob($dir.'*.yaml') as $file) {
+        foreach (glob($dir . '*.yaml') as $file) {
             $files[] = $file;
         }
-        foreach (glob($dir.'*.yml') as $file) {
+        foreach (glob($dir . '*.yml') as $file) {
             $files[] = $file;
         }
         return $files;

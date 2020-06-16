@@ -2,18 +2,15 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\ORM\DB;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Core\Config\Config;
-use SilverStripe\Core\Environment;
-use SilverStripe\Dev\BuildTask;
-use SilverStripe\Control\Director;
-use SilverStripe\Versioned\Versioned;
-use SilverStripe\View\Requirements;
 
 class MigrateDataTask extends MigrateDataTaskBase
 {
+    protected $title = 'Migrate Data';
+
+    protected $description = 'Migrates specific data defined in yml';
+
+    protected $enabled = true;
 
     /**
      * an array that is formatted like this:
@@ -45,22 +42,15 @@ class MigrateDataTask extends MigrateDataTaskBase
      */
     private static $items_to_migrate = [];
 
-    protected $title = 'Migrate Data';
-
-    protected $description = 'Migrates specific data defined in yml';
-
-    protected $enabled = true;
-
     /**
      * Queries the config for Migrate definitions, and runs migrations
      * if you extend this task then overwrite it this method
-     *
      */
     protected function performMigration()
     {
         $fullList = Config::inst()->get(self::class, 'items_to_migrate');
         foreach ($fullList as $item => $details) {
-            $this->flushNow('<h2>Starting Migration for '.$item.'</h2>');
+            $this->flushNow('<h2>Starting Migration for ' . $item . '</h2>');
 
             if (isset($details['pre_sql_queries'])) {
                 $preSqlQueries = $details['pre_sql_queries'];
@@ -82,8 +72,7 @@ class MigrateDataTask extends MigrateDataTaskBase
                 $this->runSQLQueries($postSqlQueries, 'POST');
             }
 
-            $this->flushNow('<h2>Finish Migration for '.$item.'</h2>');
+            $this->flushNow('<h2>Finish Migration for ' . $item . '</h2>');
         }
     }
-
 }

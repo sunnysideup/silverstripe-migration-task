@@ -37,6 +37,8 @@ Sunnysideup\MigrateData\Tasks\MigrateDataTask:
              - Created
              - Title
              - Version
+          leftJoin: '....'
+          where: '....'
         -
           old_table: 'Block'
           new_table: 'Element'
@@ -57,7 +59,7 @@ Sunnysideup\MigrateData\Tasks\MigrateDataTask:
           new_table: 'Element_Live'
           complex_move_fields:
             ExtraCSSClasses: ExtraClass
-   
+
         -
           old_table: 'ContentBlock_versions'
           new_table: 'ElementContent_Versions'
