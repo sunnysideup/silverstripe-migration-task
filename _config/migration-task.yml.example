@@ -1,1 +1,70 @@
-Please contact us for more details
+---
+Name: app_elementalmigration
+Only:
+  environment: 'dev'
+---
+
+SilverStripe\Assets\Dev\Tasks\FileMigrationHelper:
+  delete_invalid_files: false
+
+Sunnysideup\MigrateData\Tasks\MigrateDataTask:
+  items_to_migrate:
+    ElementalMigration:
+      pre_sql_queries:
+        - 'DELETE FROM "Element"'
+        - 'DELETE FROM "Element_Live"'
+        - 'DELETE FROM "Element_Versions"'
+        - 'DROP INDEX RecordID_Version ON ElementText_Versions'
+        - 'DROP INDEX RecordID_Version ON ElementContent_Versions'
+        - 'DROP INDEX RecordID_Version ON ElementVirtual_Versions'
+
+        - 'ALTER TABLE "Element" CHANGE "ClassName" "ClassName" VARCHAR(255)'
+        - 'ALTER TABLE "Element_Live" CHANGE "ClassName" "ClassName" VARCHAR(255)'
+        - 'ALTER TABLE "Element_Versions" CHANGE "ClassName" "ClassName" VARCHAR(255)'
+
+        - 'ALTER TABLE "Slide" CHANGE "ClassName" "ClassName" VARCHAR(255)'
+        - 'ALTER TABLE "Slide_Live" CHANGE "ClassName" "ClassName" VARCHAR(255)'
+        - 'ALTER TABLE "Slide_Versions" CHANGE "ClassName" "ClassName" VARCHAR(255)'
+
+      data:
+        -
+          old_table: 'Block'
+          new_table: 'Element'
+          simple_move_fields:
+             - ID
+             - ClassName
+             - LastEdited
+             - Created
+             - Title
+             - Version
+        -
+          old_table: 'Block'
+          new_table: 'Element'
+          complex_move_fields:
+            ExtraCSSClasses: ExtraClass
+        -
+          old_table: 'Block_Live'
+          new_table: 'Element_Live'
+          simple_move_fields:
+             - ID
+             - ClassName
+             - LastEdited
+             - Created
+             - Title
+             - Version
+        -
+          old_table: 'Block_Live'
+          new_table: 'Element_Live'
+          complex_move_fields:
+            ExtraCSSClasses: ExtraClass
+   
+        -
+          old_table: 'ContentBlock_versions'
+          new_table: 'ElementContent_Versions'
+          complex_move_fields:
+            Content: HTML
+
+      post_sql_queries:
+        - 'UPDATE "Element" SET "ShowTitle" = 0;'
+        - 'UPDATE "Element_Live" SET "ShowTitle" = 0;'
+        - 'UPDATE "Element_Versions" SET "ShowTitle" = 0;'
