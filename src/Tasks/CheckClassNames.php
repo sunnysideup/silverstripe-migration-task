@@ -14,7 +14,7 @@ class CheckClassNames extends MigrateDataTaskBase
 {
     protected $title = 'Check all tables for valid class names';
 
-    protected $description = 'Migrates specific data defined in yml';
+    protected $description = 'Check all tables for valid class names';
 
     protected $enabled = true;
 
