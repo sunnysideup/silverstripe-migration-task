@@ -67,6 +67,7 @@ class CheckClassNames extends MigrateDataTaskBase
             $this->listOfAllClasses[$slashed] = ClassInfo::shortName($objectClassName);
         }
         $this->countsOfAllClasses = array_count_values($this->listOfAllClasses);
+        $allOK = true;
 
         //check all classes
         foreach ($objectClassNames as $objectClassName) {
@@ -75,7 +76,6 @@ class CheckClassNames extends MigrateDataTaskBase
             }
             $fields = $this->dataObjectSchema->databaseFields($objectClassName, false);
             if (count($fields)) {
-                $allOK = true;
                 $tableName = $this->dataObjectSchema->tableName($objectClassName);
                 $this->flushNow('');
                 $this->flushNowLine();

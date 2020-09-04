@@ -8,6 +8,7 @@ use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
+use Exception;
 
 use Sunnysideup\Flush\FlushNow;
 
@@ -85,9 +86,9 @@ abstract class MigrateDataTaskBase extends BuildTask
     protected function runUpdateQuery(string $sqlQuery, $indents = 1)
     {
         $this->flushNow(str_replace('"', '`', $sqlQuery), 'created');
+        $prefix = str_repeat(' ... ', $indents);
         try {
             DB::query($sqlQuery);
-            $prefix = str_repeat(' ... ', $indents);
             $this->flushNow($prefix . ' DONE ' . DB::affected_rows() . ' rows affected');
         } catch (Exception $e) {
             $this->flushNow($prefix . "ERROR: Unable to run '${sqlQuery}'", 'deleted');

@@ -85,7 +85,7 @@ class UserFormFixes extends MigrateDataTaskBase
                         $this->writeInner($object);
                         $this->flushNow('... FIXING: setting ' . $relationClassValue . ' WHERE ID = ' . $relationIDValue . ' to ' . $page->ClassName, 'repaired');
                     } else {
-                        $this->flushNow('... Skipping page (should extend ' . $parentClassName . ') with ID: ' . $pageID . ' as it could not be found.');
+                        $this->flushNow('... Skipping page (should extend ' . $parentClassName . ') with ID: ' . $page->ID . ' as it could not be found.');
                     }
                 } else {
                     $this->flushNow(
