@@ -2,13 +2,13 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Exception;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
-use Exception;
 
 use Sunnysideup\Flush\FlushNow;
 
