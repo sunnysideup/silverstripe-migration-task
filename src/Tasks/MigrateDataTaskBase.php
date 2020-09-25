@@ -108,7 +108,7 @@ abstract class MigrateDataTaskBase extends BuildTask
      *          'complex_move_fields' => ['A' => 'Anew', 'B' => 'BBew', 'C2' => 'Cnew']
      *      ]
      * @param  array $data list of data that is going to be moved
-     * @return [type]       [description]
+     * @return
      */
     protected function runMoveData($data)
     {
