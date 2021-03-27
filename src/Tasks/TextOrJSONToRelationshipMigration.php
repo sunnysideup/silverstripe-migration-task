@@ -14,13 +14,11 @@ use SilverStripe\Versioned\Versioned;
 class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
 {
     /**
-     * {@inheritDoc}
      * @var string
      */
     protected $title = 'Migrate Text Or JSON to Proper Relationship in DB';
 
     /**
-     * {@inheritDoc}
      * @var string
      */
     protected $description = '
