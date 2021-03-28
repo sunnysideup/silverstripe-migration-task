@@ -166,7 +166,6 @@ ERROR: Could not find class ' . $line . '<br>');
     private function getYMLFiles($dir)
     {
         $dir = rtrim($dir, '/') . '/';
-        $files = [];
         $files = glob($dir . '*.yaml');
         foreach (glob($dir . '*.yml') as $file) {
             $files[] = $file;
