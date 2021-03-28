@@ -28,7 +28,7 @@ class CheckClassNames extends MigrateDataTaskBase
 
     protected $forReal = true;
 
-    protected $dataObjectSchema = null;
+    protected $dataObjectSchema;
 
     protected $onlyRunFor = [];
 
@@ -75,7 +75,7 @@ class CheckClassNames extends MigrateDataTaskBase
                 continue;
             }
             $fields = $this->dataObjectSchema->databaseFields($objectClassName, false);
-            if (count($fields)) {
+            if (count($fields) > 0) {
                 $tableName = $this->dataObjectSchema->tableName($objectClassName);
                 $this->flushNow('');
                 $this->flushNowLine();
@@ -89,32 +89,29 @@ class CheckClassNames extends MigrateDataTaskBase
                 if (! $tableName) {
                     $this->flushNow('... Can not find: ' . $objectClassName . '.table_name in code ', 'error');
                     $allOK = false;
-                } else {
-                    if ($this->tableExists($tableName)) {
-                        // NB. we still run for zero rows, because we may need to fix versioned records
-                        $count = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '"')->value();
-                        $this->flushNow('... ' . $count . ' rows');
-
-                        $allFields = [
-                            'ClassName',
-                        ];
-                        $moreFields = $this->Config()->other_fields_to_check;
-                        if (isset($moreFields[$objectClassName])) {
-                            foreach ($moreFields[$objectClassName] as $additionalField) {
-                                $allFields[] = $additionalField;
-                            }
+                } elseif ($this->tableExists($tableName)) {
+                    // NB. we still run for zero rows, because we may need to fix versioned records
+                    $count = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '"')->value();
+                    $this->flushNow('... ' . $count . ' rows');
+                    $allFields = [
+                        'ClassName',
+                    ];
+                    $moreFields = $this->Config()->other_fields_to_check;
+                    if (isset($moreFields[$objectClassName])) {
+                        foreach ($moreFields[$objectClassName] as $additionalField) {
+                            $allFields[] = $additionalField;
                         }
-                        foreach ($allFields as $fieldName) {
-                            if ($this->fieldExists($tableName, $fieldName)) {
-                                $this->fixingClassNames($tableName, $objectClassName, $fieldName, false);
-                            } else {
-                                $this->flushNow('... Can not find: ' . $tableName . '.' . $fieldName . ' in database.');
-                            }
-                        }
-                    } else {
-                        $this->flushNow('... Can not find: ' . $tableName . ' in database.', 'error');
-                        $allOK = false;
                     }
+                    foreach ($allFields as $fieldName) {
+                        if ($this->fieldExists($tableName, $fieldName)) {
+                            $this->fixingClassNames($tableName, $objectClassName, $fieldName);
+                        } else {
+                            $this->flushNow('... Can not find: ' . $tableName . '.' . $fieldName . ' in database.');
+                        }
+                    }
+                } else {
+                    $this->flushNow('... Can not find: ' . $tableName . ' in database.', 'error');
+                    $allOK = false;
                 }
             } else {
                 $this->flushNow('... No table needed');
@@ -131,7 +128,7 @@ class CheckClassNames extends MigrateDataTaskBase
     {
         $this->flushNow('... CHECKING ' . $tableName . '.' . $fieldName . ' ...');
         $count = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '"')->value();
-        $where = '"' . $fieldName . '" NOT IN (\'' . implode("', '", array_keys($this->listOfAllClasses)) . '\')';
+        $where = '"' . $fieldName . '" NOT IN (\'' . implode("', '", array_keys($this->listOfAllClasses)) . "')";
         $whereA = $where . ' AND ( "' . $fieldName . '" IS NULL OR "' . $fieldName . "\" = '' )";
         $whereB = $where . ' AND NOT ( "' . $fieldName . '" IS NULL OR "' . $fieldName . "\" = '' )";
         $rowsToFix = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $where)->value();
@@ -142,10 +139,10 @@ class CheckClassNames extends MigrateDataTaskBase
                 $this->flushNow('... All rows ' . $count . ' in table ' . $tableName . ' are broken: ', 'error');
             } else {
                 $this->flushNow('... ' . $rowsToFix . ' errors in "' . $fieldName . '" values:');
-                if ($rowsToFixA) {
+                if ($rowsToFixA !== '') {
                     $this->flushNow('... ... ' . $rowsToFixA . ' in table ' . $tableName . ' do not have a ' . $fieldName . ' at all and ', 'error');
                 }
-                if ($rowsToFixB) {
+                if ($rowsToFixB !== '') {
                     $this->flushNow('... ... ' . $rowsToFixB . ' in table ' . $tableName . ' have a bad ' . $fieldName . '');
                 }
             }
@@ -167,7 +164,7 @@ class CheckClassNames extends MigrateDataTaskBase
                                         '
                                         UPDATE "' . $tableName . '"
                                         SET "' . $tableName . '"."' . $fieldName . '" = \'' . $longNameAlreadySlashed . '\'
-                                        WHERE "' . $fieldName . '" = \'' . $row[$fieldName] . '\'',
+                                        WHERE "' . $fieldName . '" = \'' . $row[$fieldName] . "'",
                                         2
                                     );
                                 }
@@ -203,7 +200,7 @@ class CheckClassNames extends MigrateDataTaskBase
                                             ON "' . $optionTableName . '"."ID" = "' . $tableName . '"."ID"
                                     WHERE "' . $tableName . '"."ID" = ' . $row['ID'])->value();
                             if ($hasMatch === 1) {
-                                $optionCount++;
+                                ++$optionCount;
                                 $matchedClassName = $optionClassName;
                                 if ($optionCount > 1) {
                                     break;

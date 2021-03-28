@@ -80,7 +80,7 @@ class WriteAllDataObjects extends MigrateDataTaskBase
         $value = null;
         $ignoreList = $this->Config()->get('fields_to_ignore_for_updates');
         if (isset($this->listOfFieldTypesRaw[$type])) {
-            $this->listOfFieldTypesRaw[$type]++;
+            ++$this->listOfFieldTypesRaw[$type];
         } else {
             $this->listOfFieldTypesRaw[$type] = 1;
         }
@@ -122,7 +122,7 @@ class WriteAllDataObjects extends MigrateDataTaskBase
                     break;
             }
             if (isset($this->listOfFieldTypesClean[$realType])) {
-                $this->listOfFieldTypesClean[$realType]++;
+                ++$this->listOfFieldTypesClean[$realType];
             } else {
                 $this->listOfFieldTypesClean[$realType] = 1;
             }

@@ -17,7 +17,7 @@ class UserFormFixes extends MigrateDataTaskBase
 
     protected $enabled = true;
 
-    public function performMigration()
+    protected function performMigration()
     {
 
         // EditableFormField

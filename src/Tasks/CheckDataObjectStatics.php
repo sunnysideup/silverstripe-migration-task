@@ -10,6 +10,10 @@ use SilverStripe\ORM\DataObjectSchema;
 
 class CheckDataObjectStatics extends MigrateDataTaskBase
 {
+    /**
+     * @var mixed
+     */
+    public $dataObjectSchema;
     protected $title = 'Data Object Statics Check';
 
     protected $description = 'Goes through all Data Object classes and checks for missing statics';
@@ -78,7 +82,7 @@ class CheckDataObjectStatics extends MigrateDataTaskBase
                 } else {
                     $recommended = $dbFields;
                 }
-                if (count($recommended)) {
+                if (count($recommended) > 0) {
                     foreach ($recommended as $k => $v) {
                         if (in_array($v, $this->Config()->no_searchable_fields, true)) {
                             unset($recommended[$k]);

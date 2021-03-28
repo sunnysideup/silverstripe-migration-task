@@ -12,6 +12,10 @@ use SilverStripe\Versioned\Versioned;
 
 class PublishAllFIles extends MigrateDataTaskBase
 {
+    /**
+     * @var mixed
+     */
+    public $admin;
     protected $title = 'Publish All Files';
 
     protected $description = 'Get all files ready to go - useful in SS3 to SS4 conversion.';
@@ -50,7 +54,7 @@ class PublishAllFIles extends MigrateDataTaskBase
         return $this;
     }
 
-    public function performMigration()
+    protected function performMigration()
     {
         $this->admin = Injector::inst()->get(AssetAdmin::class);
         $this->runForFolder(0);
@@ -78,7 +82,7 @@ class PublishAllFIles extends MigrateDataTaskBase
         $result = $sqlQuery->execute();
         foreach ($result as $row) {
             $file = File::get()->byID($row['ID']);
-            if ($file) {
+            if ($file !== null) {
                 $name = $file->getFilename();
                 if (! $name) {
                     $file->write();
@@ -102,13 +106,13 @@ class PublishAllFIles extends MigrateDataTaskBase
                             $file->write();
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                             $test = DB::query('SELECT COUNT(ID) FROM File_Live WHERE ID = ' . $file->ID)->value();
-                            if (intval($test) === 0) {
+                            if ((int) $test === 0) {
                                 $this->flushNow('... error finding: ' . $name, 'deleted');
                             }
                         } else {
                             $this->flushNow('... Error in publishing V2 ...' . print_r($file->toMap(), 1), 'deleted');
                         }
-                    } catch (\Exception $e) {
+                    } catch (\Exception $exception) {
                         $this->flushNow('... Error in publishing V1 ...' . print_r($file->toMap(), 1), 'deleted');
                     }
                 } else {
@@ -130,7 +134,7 @@ class PublishAllFIles extends MigrateDataTaskBase
         if (file_exists($originalDir . $name) && ! is_dir($originalDir . $name)) {
             if (! $file->getField('FileHash')) {
                 $hash = sha1_file($originalDir . $name);
-                $this->runUpdateQuery('UPDATE "File" SET "FileHash" = \'' . $hash . '\' WHERE "ID" = \'' . $file->ID . '\' LIMIT 1;');
+                $this->runUpdateQuery('UPDATE "File" SET "FileHash" = \'' . $hash . '\' WHERE "ID" = \'' . $file->ID . "' LIMIT 1;");
             } else {
                 $hash = $file->FileHash;
             }

@@ -69,7 +69,7 @@ use Sunnysideup\Flush\FlushNow;
          }
 
          foreach ($this->config()->deleted_tables as $tableName) {
-             if (! DB::query(sprintf('SHOW TABLES LIKE \'%s\'', $tableName))->value()) {
+             if (DB::query(sprintf("SHOW TABLES LIKE '%s'", $tableName))->value() === '') {
                  FlushNow::do_flush(sprintf('INFO: Table %s was not found ', $tableName));
                  continue;
              }
@@ -83,7 +83,7 @@ use Sunnysideup\Flush\FlushNow;
              $this->execute(sprintf('DROP TABLE "%s"', $tableName));
          }
 
-         foreach ($this->getTables(false) as $tableName) {
+         foreach ($this->getTables() as $tableName) {
              $this->deleteFieldsAndIndexes($tableName);
          }
 

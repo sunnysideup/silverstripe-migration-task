@@ -57,13 +57,13 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     /**
      * @throws Exception
      */
-    public function performMigration()
+    protected function performMigration()
     {
         $dataToFix = $this->Config()->data_to_fix;
         if (count($dataToFix) === 0) {
             user_error('You need to specify at least some data to fix!');
         }
-        for ($i = 1; $i < 3; $i++) {
+        for ($i = 1; $i < 3; ++$i) {
             $this->flushNow('LOOP LOOP: ' . $i);
             foreach ($dataToFix as $className => $columns) {
                 $this->flushNow('... LOOP ClassName: ' . $className);
@@ -73,13 +73,10 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
                         $this->flushNow('... ... ... LOOP Field: ' . $column);
                         $this->updateRows($className, $tableExtension, $column, $lookupMethod);
                         $stage = null;
-                        switch ($tableExtension) {
-                            case '':
-                                $stage = Versioned::DRAFT;
-                                break;
-                            case '_Live':
-                                $stage = Versioned::LIVE;
-                                break;
+                        if ($tableExtension == '') {
+                            $stage = Versioned::DRAFT;
+                        } elseif ($tableExtension == '_Live') {
+                            $stage = Versioned::LIVE;
                         }
                         if ($stage !== null) {
                             $this->testRelationships($className, $lookupMethod, $stage);
@@ -125,10 +122,10 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
         } else {
             //adding empty string ...
             $fieldValue = $this->sanitiseChars($fieldValue . '');
-            if ($fieldValue) {
+            if ($fieldValue !== '') {
                 $fieldValue = json_encode(explode(',', $fieldValue));
                 $sql = '
-                    UPDATE ' . $tableName . ' SET ' . $column . ' = \'' . $fieldValue . '\'
+                    UPDATE ' . $tableName . ' SET ' . $column . " = '" . $fieldValue . '\'
                     WHERE ' . $tableName . '."ID" = ' . $id . ';';
                 $this->flushNow(
                     '... ... ... ... ... ' .
@@ -141,7 +138,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
                 $this->flushNow(
                     '... ... ... ... ... ' .
                     'column ' . $column . ' in table: ' . $tableName .
-                    ' with row ID: ' . $id . ' is empty so doesn\'t need to be updated',
+                    ' with row ID: ' . $id . " is empty so doesn't need to be updated",
                     'repaired'
                 );
             }
@@ -156,7 +153,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
         if (empty($array)) {
             $fieldValue = '';
             $sql = '
-                UPDATE ' . $tableName . ' SET ' . $column . ' = \'' . $fieldValue . '\'
+                UPDATE ' . $tableName . ' SET ' . $column . " = '" . $fieldValue . '\'
                 WHERE ' . $tableName . '."ID" = ' . $id . ';';
             $this->flushNow(
                 '... ... ... ... ... ' .
@@ -172,7 +169,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
 
     protected function addToRelationship(string $className, int $id, string $lookupMethod, string $fieldValue): void
     {
-        if ($fieldValue) {
+        if ($fieldValue !== '') {
             $array = @json_decode($fieldValue, false);
             if (! empty($array)) {
                 $obj = $className::get()->byID($id);
@@ -226,11 +223,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
             $fields = Config::inst()->get($className, 'has_many');
             $fields += Config::inst()->get($className, 'many_many');
             $fields += Config::inst()->get($className, 'belongs_many_many');
-            foreach ($fields as $methodsCheck => $lookupClassName) {
-                if ($methodsCheck === $lookupMethod) {
-                    $this->lookupClassNames[$key] = $lookupClassName;
-                }
-            }
+            $this->lookupClassNames[$key] = $fields[$lookupMethod] ?? $this->lookupClassNames[$key];
         }
 
         return $this->lookupClassNames[$key];

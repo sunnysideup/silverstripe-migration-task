@@ -34,7 +34,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
      * Implement this method in the task subclass to
      * execute via the TaskRunner
      */
-    public function performMigration()
+    protected function performMigration()
     {
         $count = 0;
         $subDirs = $this->getSubDirectories(Director::baseFolder() . '/');
@@ -67,7 +67,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                 if (! $line) {
                     break;
                 }
-                $count++;
+                ++$count;
                 $isProperty = false;
                 // $this->flushNow( '...';
                 //skip lines that are indented
@@ -82,26 +82,22 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                             $myItems = explode(':', $line);
                             if (count($myItems) === 2 && $myItems[0] && $myItems[1]) {
                                 $property = trim($myItems[0]);
-                                $property = trim($myItems[0], '\'');
+                                $property = trim($myItems[0], "'");
                                 $property = trim($myItems[0], '"');
                                 if (strpos($property, '\\')) {
                                     if (! class_exists($property)) {
                                         $this->flushNow('
 ERROR ' . $className . '.' . $property . ' may not exist as class name but looks like one.<br>');
                                     }
-                                } else {
-                                    if (strpos($property, '*')) {
-                                        $this->flushNow('
+                                } elseif (strpos($property, '*')) {
+                                    $this->flushNow('
 ERROR ' . $className . '.' . $property . ' contains *.<br>');
-                                    } else {
-                                        if (! property_exists($className, $property)) {
-                                            $this->flushNow('
+                                } elseif (! property_exists($className, $property)) {
+                                    $this->flushNow('
 ERROR ' . $className . '.' . $property . ' property could not be found<br>');
-                                        } else {
-                                            $this->flushNow('
+                                } else {
+                                    $this->flushNow('
 SUCCESS ' . $className . '.' . $property . '');
-                                        }
-                                    }
                                 }
                             } else {
                                 $this->flushNow('
@@ -171,9 +167,7 @@ ERROR: Could not find class ' . $line . '<br>');
     {
         $dir = rtrim($dir, '/') . '/';
         $files = [];
-        foreach (glob($dir . '*.yaml') as $file) {
-            $files[] = $file;
-        }
+        $files = glob($dir . '*.yaml');
         foreach (glob($dir . '*.yml') as $file) {
             $files[] = $file;
         }

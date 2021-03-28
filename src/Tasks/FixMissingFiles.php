@@ -76,9 +76,9 @@ class FixMissingFiles extends BuildTask
         try {
             DB::query($sqlQuery);
             $this->flushNow($prefix . ' DONE ' . DB::affected_rows() . ' rows affected');
-        } catch (\Exception $e) {
-            $this->flushNow($prefix . "ERROR: Unable to run '${sqlQuery}'", 'deleted');
-            $this->flushNow('' . $e->getMessage() . '', 'deleted');
+        } catch (\Exception $exception) {
+            $this->flushNow($prefix . "ERROR: Unable to run '{$sqlQuery}'", 'deleted');
+            $this->flushNow('' . $exception->getMessage() . '', 'deleted');
         }
     }
 
@@ -88,13 +88,13 @@ class FixMissingFiles extends BuildTask
     protected function publishFile($fileId)
     {
         $sql = "
-            SELECT * FROM File_Live WHERE ID = ${fileId}
+            SELECT * FROM File_Live WHERE ID = {$fileId}
         ";
         $result = DB::query($sql);
 
-        if (! $result->numRecords()) {
+        if ($result->numRecords() === 0) {
             $sql = "
-                SELECT * FROM File WHERE ID = ${fileId}
+                SELECT * FROM File WHERE ID = {$fileId}
             ";
             $file_record = DB::query($sql)->first();
 
