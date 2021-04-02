@@ -14,6 +14,7 @@ class CheckDataObjectStatics extends MigrateDataTaskBase
      * @var mixed
      */
     public $dataObjectSchema;
+
     protected $title = 'Data Object Statics Check';
 
     protected $description = 'Goes through all Data Object classes and checks for missing statics';

@@ -73,9 +73,9 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
                         $this->flushNow('... ... ... LOOP Field: ' . $column);
                         $this->updateRows($className, $tableExtension, $column, $lookupMethod);
                         $stage = null;
-                        if ($tableExtension == '') {
+                        if ($tableExtension === '') {
                             $stage = Versioned::DRAFT;
-                        } elseif ($tableExtension == '_Live') {
+                        } elseif ($tableExtension === '_Live') {
                             $stage = Versioned::LIVE;
                         }
                         if ($stage !== null) {

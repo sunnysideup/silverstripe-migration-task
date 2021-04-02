@@ -16,6 +16,7 @@ class PublishAllFIles extends MigrateDataTaskBase
      * @var mixed
      */
     public $admin;
+
     protected $title = 'Publish All Files';
 
     protected $description = 'Get all files ready to go - useful in SS3 to SS4 conversion.';

@@ -37,7 +37,7 @@ class DraftVsLive extends MigrateDataTaskBase
                 //check count
                 $draftCount = DB::query('SELECT COUNT(ID) FROM ' . $table . ' ORDER BY ID;')->value();
                 $liveCount = DB::query('SELECT COUNT(ID) FROM ' . $liveTable . ' ORDER BY ID;')->value();
-                if ( (int) $draftCount !== (int) $liveCount ) {
+                if ((int) $draftCount !== (int) $liveCount) {
                     $this->flushNow(
                         'TABLE ' . $table . ' count (' . $draftCount . ')
                         is not the same as count for ' . $liveTable . ' (' . $liveCount . '),
