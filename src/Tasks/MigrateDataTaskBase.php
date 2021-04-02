@@ -80,10 +80,10 @@ abstract class MigrateDataTaskBase extends BuildTask
     }
 
     /**
-     * @param  array $sqlQuery list of queries
-     * @param  string $indents what is this list about?
+     * @param  string   $sqlQuery list of queries
+     * @param  int      $indents what is this list about?
      */
-    protected function runUpdateQuery(string $sqlQuery, $indents = 1)
+    protected function runUpdateQuery(string $sqlQuery, ?int $indents = 1)
     {
         $this->flushNow(str_replace('"', '`', $sqlQuery), 'created');
         $prefix = str_repeat(' ... ', $indents);
@@ -107,10 +107,10 @@ abstract class MigrateDataTaskBase extends BuildTask
      *          OR
      *          'complex_move_fields' => ['A' => 'Anew', 'B' => 'BBew', 'C2' => 'Cnew']
      *      ]
-     * @param  array $data list of data that is going to be moved
-     * @return
+     * list of data that is going to be moved
+     * @return void
      */
-    protected function runMoveData($data)
+    protected function runMoveData(array $data)
     {
         if ($data !== []) {
             $this->flushNow('<h3>Migrating data - Core Migration</h3>');
@@ -173,7 +173,7 @@ abstract class MigrateDataTaskBase extends BuildTask
     /**
      * @param  array $publishClasses list of class names to write / publish
      */
-    protected function runPublishClasses($publishClasses)
+    protected function runPublishClasses(array $publishClasses)
     {
         if ($publishClasses !== []) {
             $this->flushNow('<h3>Publish classes</h3>');
@@ -210,14 +210,23 @@ abstract class MigrateDataTaskBase extends BuildTask
     /**
      * Migrates data from one table to another
      *
-     * @param bool | $includeInserts - the db table where we are moving fields from
-     * @param string | $tableOld - the db table where we are moving fields from
-     * @param string | $tableNew - the db table where we are moving fields to
-     * @param string | $fieldNamesOld - The current field names
-     * @param string | $fieldNamesNew - The new field names (this may be the same as $fieldNameOld)
-     * @return string
+     * @param bool    $includeInserts - the db table where we are moving fields from
+     * @param string  $tableOld - the db table where we are moving fields from
+     * @param string  $tableNew - the db table where we are moving fields to
+     * @param array   $fieldNamesOld - The current field names
+     * @param array   $fieldNamesNew - The new field names (this may be the same as $fieldNameOld)
+     * @param array   $leftJoin -
+     * @param string  $where -
      */
-    protected function migrateSimple($includeInserts, $tableOld, $tableNew, $fieldNamesOld, $fieldNamesNew, $leftJoin, $where)
+    protected function migrateSimple(
+        bool $includeInserts,
+        string $tableOld,
+        string $tableNew,
+        array $fieldNamesOld,
+        array $fieldNamesNew,
+        array $leftJoin = [],
+        string $where = ''
+    )
     {
         if (! $this->tableExists($tableOld)) {
             $this->flushNow("{$tableOld} (old table) does not exist", 'error');
@@ -278,7 +287,7 @@ abstract class MigrateDataTaskBase extends BuildTask
                     }
                     $updateQuery .= 'SET ';
                     $fieldNamesOldCount = count($fieldNamesOld);
-
+                    $fieldNamesNewCount = count($fieldNamesNew);
                     for ($i = 0; $i < $fieldNamesNewCount && $i < $fieldNamesOldCount; ++$i) {
                         if ($i > 0) {
                             $updateQuery .= ', ';
@@ -296,7 +305,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         }
     }
 
-    protected function makeTableObsolete($tableName): bool
+    protected function makeTableObsolete(string $tableName): bool
     {
         $schema = $this->getSchema();
         if ($this->tableExists($tableName)) {
@@ -311,7 +320,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         return false;
     }
 
-    protected function tableExists($tableName): bool
+    protected function tableExists(string $tableName): bool
     {
         if (! isset($this->_cacheTableExists[$tableName])) {
             $schema = $this->getSchema();
@@ -321,7 +330,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         return $this->_cacheTableExists[$tableName];
     }
 
-    protected function fieldExists($tableName, $fieldName): bool
+    protected function fieldExists(string $tableName, string $fieldName): bool
     {
         $key = $tableName . '_' . $fieldName;
         if (! isset($this->_cacheFieldExists[$key])) {
@@ -334,7 +343,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         return $this->_cacheFieldExists[$key];
     }
 
-    protected function renameField($table, $oldFieldName, $newFieldName)
+    protected function renameField(string $table, string $oldFieldName, string $newFieldName)
     {
         $this->getSchema()->dontRequireField($table, $oldFieldName, $newFieldName);
     }
@@ -358,13 +367,13 @@ abstract class MigrateDataTaskBase extends BuildTask
         return $this->_schemaForDataObject;
     }
 
-    protected function getListOfIDs($tableName, $leftJoin = [], $where = '')
+    protected function getListOfIDs(string $tableName, ?array $leftJoin = [], ?string $where = '')
     {
         return $this->getListAsIterableQuery($tableName, $leftJoin = [], $where = '')
             ->keyedColumn('ID');
     }
 
-    protected function getListAsIterableQuery($tableName, $leftJoin = [], $where = '')
+    protected function getListAsIterableQuery(string $tableName, ?array $leftJoin = [], ?string $where = '')
     {
         $sqlSelect = new SQLSelect();
         $sqlSelect->setFrom($tableName);

@@ -35,8 +35,8 @@ class DraftVsLive extends MigrateDataTaskBase
             $liveTable = $table . '_Live';
             if ($this->tableExists($liveTable)) {
                 //check count
-                $draftCount = DB::query('SELECT COUNT(ID) FROM ' . $table . ' ORDER BY ID;')->value();
-                $liveCount = DB::query('SELECT COUNT(ID) FROM ' . $liveTable . ' ORDER BY ID;')->value();
+                $draftCount = (int) DB::query('SELECT COUNT(ID) FROM ' . $table . ' ORDER BY ID;')->value();
+                $liveCount = (int) DB::query('SELECT COUNT(ID) FROM ' . $liveTable . ' ORDER BY ID;')->value();
                 if ((int) $draftCount !== (int) $liveCount) {
                     $this->flushNow(
                         'TABLE ' . $table . ' count (' . $draftCount . ')
