@@ -22,7 +22,7 @@ class MigrateDataTask extends MigrateDataTaskBase
      *               [
      *                   'include_inserts' => true|false, #assumed true if not provided
      *                   'old_table' => 'foo',
-     *                   'new_table' => 'bar' (can be the same!)
+     *                   'new_table' => 'bar' (can be the same!).
      *
      *                   'simple_move_fields' => ['A', 'B', 'C']
      *                       ---  OR ----
@@ -38,13 +38,14 @@ class MigrateDataTask extends MigrateDataTaskBase
      *         ]
      *
      *     ]
+     *
      * @var array
      */
     private static $items_to_migrate = [];
 
     /**
      * Queries the config for Migrate definitions, and runs migrations
-     * if you extend this task then overwrite it this method
+     * if you extend this task then overwrite it this method.
      */
     protected function performMigration()
     {

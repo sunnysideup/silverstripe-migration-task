@@ -18,7 +18,6 @@ class DraftVsLive extends MigrateDataTaskBase
 
     protected function performMigration()
     {
-
         //get tables in DB
         $dbTablesPresent = [];
         if (empty($this->selectedTables)) {

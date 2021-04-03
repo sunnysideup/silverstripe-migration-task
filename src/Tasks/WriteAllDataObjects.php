@@ -22,7 +22,8 @@ class WriteAllDataObjects extends MigrateDataTaskBase
      *      [
      *          'MySensitiveGuy',
      *          'MySensitiveGal',
-     *      ]
+     *      ].
+     *
      * @var array
      */
     private static $objects_to_ignore_for_creation = [
@@ -34,7 +35,8 @@ class WriteAllDataObjects extends MigrateDataTaskBase
      *      [
      *          'MySensitiveGuy',
      *          'MySensitiveGal',
-     *      ]
+     *      ].
+     *
      * @var array
      */
     private static $objects_to_ignore_for_updates = [
@@ -46,7 +48,8 @@ class WriteAllDataObjects extends MigrateDataTaskBase
      *      [
      *          'MySensitiveGuy',
      *          'MySensitiveGal',
-     *      ]
+     *      ].
+     *
      * @var array
      */
     private static $fields_to_ignore_for_updates = [
@@ -70,7 +73,8 @@ class WriteAllDataObjects extends MigrateDataTaskBase
      *          [
      *              'Title' => 'AAA',
      *          ]
-     *      ]
+     *      ].
+     *
      * @var array
      */
     private static $required_defaults = [];
@@ -94,31 +98,35 @@ class WriteAllDataObjects extends MigrateDataTaskBase
                 case 'Varchar':
                 case 'Text':
                     $value = 'TestValue';
+
                     break;
                 case 'Boolean':
                     $value = 1;
+
                     break;
                 case 'HTMLText':
                 case 'HTMLFragment':
                     $value = '<p>Hello World';
-                    break;
 
+                    break;
                 case 'Int':
                     $value = 2;
+
                     break;
                 case 'Enum':
                     $values = $obj->dbObject($name)->enumValues(false);
                     $value = key($values);
-                    break;
 
+                    break;
                 case 'DBFile':
                     break;
-
                 case 'Datetime':
-                    $value = Date('Y-m-d h:i:s');
+                    $value = date('Y-m-d h:i:s');
+
                     break;
                 case 'Date':
-                    $value = Date('Y-m-d');
+                    $value = date('Y-m-d');
+
                     break;
             }
             if (isset($this->listOfFieldTypesClean[$realType])) {
@@ -164,7 +172,7 @@ class WriteAllDataObjects extends MigrateDataTaskBase
                     $this->flushNow('... UPDATING ');
                     foreach ($fields as $name => $type) {
                         $value = $this->getExampleValue($obj, $name, $type);
-                        if ($value !== null) {
+                        if (null !== $value) {
                             $obj->{$name} = $value;
                         }
                     }

@@ -8,7 +8,6 @@ use SilverStripe\UserForms\Model\EditableFormField;
 use SilverStripe\UserForms\Model\Recipient\EmailRecipient;
 use SilverStripe\UserForms\Model\Submission\SubmittedForm;
 use SilverStripe\UserForms\Model\UserDefinedForm;
-
 use SilverStripe\Versioned\Versioned;
 
 class UserFormFixes extends MigrateDataTaskBase
@@ -21,7 +20,6 @@ class UserFormFixes extends MigrateDataTaskBase
 
     protected function performMigration()
     {
-
         // EditableFormField
         $this->flushNowLine();
         $this->flushNow('fixing EditableFormField');
@@ -64,7 +62,7 @@ class UserFormFixes extends MigrateDataTaskBase
     }
 
     /**
-     * @param  DataList $objects
+     * @param DataList $objects
      */
     protected function writeObjects($objects, string $parentClassName, string $field)
     {
@@ -80,6 +78,7 @@ class UserFormFixes extends MigrateDataTaskBase
                     $relation = $relationClassValue::get()->byID($relationIDValue);
                     if ($relation && $relation->ClassName === $relationClassValue) {
                         $this->flushNow('... OK: ' . $object->ClassName . ' relation => ' . $relationClassValue . ' WHERE ID = ' . $relationIDValue);
+
                         continue;
                     }
                     $this->flushNow('... ERROR: : ' . $object->ClassName . ' relation => could not find: ' . $relationClassValue . ' WHERE ID = ' . $relationIDValue, 'error');

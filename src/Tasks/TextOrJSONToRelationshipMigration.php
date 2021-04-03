@@ -3,12 +3,12 @@
 namespace Sunnysideup\MigrateData\Tasks;
 
 use SilverStripe\Core\Config\Config;
-
 use SilverStripe\ORM\DB;
 use SilverStripe\Versioned\Versioned;
 
 /**
- * Used to debug a QueueJob
+ * Used to debug a QueueJob.
+ *
  *  @todo: UPGRADE: remove after upgrade
  */
 class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
@@ -49,7 +49,8 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
      *     ClassNameA
      *         OldField => NewRelation
      *     ClassNameB
-     *         OldField => NewRelation
+     *         OldField => NewRelation.
+     *
      * @var array
      */
     private static $data_to_fix = [];
@@ -60,7 +61,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     protected function performMigration()
     {
         $dataToFix = $this->Config()->data_to_fix;
-        if (count($dataToFix) === 0) {
+        if (0 === count($dataToFix)) {
             user_error('You need to specify at least some data to fix!');
         }
         for ($i = 1; $i < 3; ++$i) {
@@ -73,12 +74,12 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
                         $this->flushNow('... ... ... LOOP Field: ' . $column);
                         $this->updateRows($className, $tableExtension, $column, $lookupMethod);
                         $stage = null;
-                        if ($tableExtension === '') {
+                        if ('' === $tableExtension) {
                             $stage = Versioned::DRAFT;
-                        } elseif ($tableExtension === '_Live') {
+                        } elseif ('_Live' === $tableExtension) {
                             $stage = Versioned::LIVE;
                         }
-                        if ($stage !== null) {
+                        if (null !== $stage) {
                             $this->testRelationships($className, $lookupMethod, $stage);
                         }
                     }
@@ -104,7 +105,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
             $fieldValue = $row[$column];
             $fieldValue = $this->updateRow($tableName, $id, $column, $fieldValue);
             $fieldValue = $this->updateEmptyRows($tableName, $id, $column, $fieldValue);
-            if ($tableExtension === '') {
+            if ('' === $tableExtension) {
                 $this->addToRelationship($className, $id, $lookupMethod, $fieldValue);
             }
         }
@@ -112,7 +113,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
 
     protected function updateRow($tableName, $id, $column, $fieldValue): string
     {
-        if (strpos($fieldValue, '["') === 0 && strpos($fieldValue, '"]')) {
+        if (0 === strpos($fieldValue, '["') && strpos($fieldValue, '"]')) {
             $this->flushNow(
                 '... ... ... ... ... ' .
                 'column ' . $column . ' in table: ' . $tableName . ' with row ID: ' . $id .
@@ -122,7 +123,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
         } else {
             //adding empty string ...
             $fieldValue = $this->sanitiseChars($fieldValue . '');
-            if ($fieldValue !== '') {
+            if ('' !== $fieldValue) {
                 $fieldValue = json_encode(explode(',', $fieldValue));
                 $sql = '
                     UPDATE ' . $tableName . ' SET ' . $column . " = '" . $fieldValue . '\'
@@ -169,7 +170,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
 
     protected function addToRelationship(string $className, int $id, string $lookupMethod, string $fieldValue): void
     {
-        if ($fieldValue !== '') {
+        if ('' !== $fieldValue) {
             $array = @json_decode($fieldValue, false);
             if (! empty($array)) {
                 $obj = $className::get()->byID($id);
@@ -191,7 +192,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     protected function sanitiseChars(string $value): string
     {
         foreach ($this->sanitiseCharList as $char) {
-            if (strpos($value, $char) !== false) {
+            if (false !== strpos($value, $char)) {
                 $this->flushNow(
                     '... ... ... ... ... ... ' .
                     $char . ' was found in ' . $value . ' we are removing it',

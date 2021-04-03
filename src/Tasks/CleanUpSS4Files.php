@@ -7,7 +7,7 @@ use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
 
 /**
- * Update all systems
+ * Update all systems.
  *
  * Class UpdateSystemsWithProductCodeVariantKeywords
  */
@@ -25,6 +25,8 @@ class CleanUpSS4Files extends BuildTask
 
     /**
      * Method to save all System dataobjects and trigger the onBeforeWrite() event handler.
+     *
+     * @param mixed $request
      */
     public function run($request)
     {
