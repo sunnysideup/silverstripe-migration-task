@@ -108,7 +108,6 @@ abstract class MigrateDataTaskBase extends BuildTask
      *          'complex_move_fields' => ['A' => 'Anew', 'B' => 'BBew', 'C2' => 'Cnew']
      *      ]
      * list of data that is going to be moved
-     * @return void
      */
     protected function runMoveData(array $data)
     {
@@ -226,8 +225,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         array $fieldNamesNew,
         array $leftJoin = [],
         string $where = ''
-    )
-    {
+    ) {
         if (! $this->tableExists($tableOld)) {
             $this->flushNow("{$tableOld} (old table) does not exist", 'error');
         }

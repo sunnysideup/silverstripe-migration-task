@@ -3,13 +3,13 @@
 namespace Sunnysideup\MigrateData\Tasks;
 
 use SilverStripe\CMS\Model\SiteTree;
+use SilverStripe\ORM\DataList;
 use SilverStripe\UserForms\Model\EditableFormField;
 use SilverStripe\UserForms\Model\Recipient\EmailRecipient;
 use SilverStripe\UserForms\Model\Submission\SubmittedForm;
 use SilverStripe\UserForms\Model\UserDefinedForm;
-use SilverStripe\Versioned\Versioned;
 
-use SilverStripe\ORM\DataList;
+use SilverStripe\Versioned\Versioned;
 
 class UserFormFixes extends MigrateDataTaskBase
 {
@@ -65,7 +65,6 @@ class UserFormFixes extends MigrateDataTaskBase
 
     /**
      * @param  DataList $objects
-     * @return void
      */
     protected function writeObjects($objects, string $parentClassName, string $field)
     {
