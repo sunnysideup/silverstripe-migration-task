@@ -10,7 +10,7 @@ use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Versioned\Versioned;
 
-class PublishAllFiles extends MigrateDataTaskBase
+class PublishAllFIles extends MigrateDataTaskBase
 {
     /**
      * @var mixed
@@ -32,8 +32,6 @@ class PublishAllFiles extends MigrateDataTaskBase
     protected $enabled = true;
 
     /**
-     * @param bool $b
-     *
      * @return PublishAllFiles
      */
     public function setUpdateLocation(bool $b)
@@ -44,8 +42,6 @@ class PublishAllFiles extends MigrateDataTaskBase
     }
 
     /**
-     * @param bool $b
-     *
      * @return PublishAllFiles
      */
     public function setGenerateThumbnails(bool $b)
