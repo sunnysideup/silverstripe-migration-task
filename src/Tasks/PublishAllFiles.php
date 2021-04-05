@@ -10,7 +10,7 @@ use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Versioned\Versioned;
 
-class PublishAllFIles extends MigrateDataTaskBase
+class PublishAllFiles extends MigrateDataTaskBase
 {
     /**
      * @var mixed
