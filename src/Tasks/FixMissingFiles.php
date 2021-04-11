@@ -7,7 +7,7 @@ use SilverStripe\ORM\DB;
 use Sunnysideup\Flush\FlushNow;
 
 /**
- * Update all systems
+ * Update all systems.
  *
  * Class UpdateSystemsWithProductCodeVariantKeywords
  */
@@ -27,7 +27,9 @@ class FixMissingFiles extends BuildTask
 		data migration task will only update one. Causing the other files to "go missing". This task fixes that';
 
     /**
-     * Fix broken file references and publish them
+     * Fix broken file references and publish them.
+     *
+     * @param mixed $request
      */
     public function run($request)
     {
@@ -66,13 +68,14 @@ class FixMissingFiles extends BuildTask
     }
 
     /**
-     * @param  array $sqlQuery list of queries
-     * @param  string $indents what is this list about?
+     * @param array  $sqlQuery list of queries
+     * @param string $indents  what is this list about?
      */
     protected function runUpdateQuery(string $sqlQuery, $indents = 1)
     {
         $this->flushNow(str_replace('"', '`', $sqlQuery), 'created');
         $prefix = str_repeat(' ... ', $indents);
+
         try {
             DB::query($sqlQuery);
             $this->flushNow($prefix . ' DONE ' . DB::affected_rows() . ' rows affected');
@@ -83,7 +86,9 @@ class FixMissingFiles extends BuildTask
     }
 
     /**
-     * Take a file record and publish it (enter it to File_Live)
+     * Take a file record and publish it (enter it to File_Live).
+     *
+     * @param mixed $fileId
      */
     protected function publishFile($fileId)
     {
@@ -92,7 +97,7 @@ class FixMissingFiles extends BuildTask
         ";
         $result = DB::query($sql);
 
-        if ($result->numRecords() === 0) {
+        if (0 === $result->numRecords()) {
             $sql = "
                 SELECT * FROM File WHERE ID = {$fileId}
             ";

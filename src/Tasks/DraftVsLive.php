@@ -18,7 +18,6 @@ class DraftVsLive extends MigrateDataTaskBase
 
     protected function performMigration()
     {
-
         //get tables in DB
         $dbTablesPresent = [];
         if (empty($this->selectedTables)) {
@@ -37,7 +36,7 @@ class DraftVsLive extends MigrateDataTaskBase
                 //check count
                 $draftCount = DB::query('SELECT COUNT(ID) FROM ' . $table . ' ORDER BY ID;')->value();
                 $liveCount = DB::query('SELECT COUNT(ID) FROM ' . $liveTable . ' ORDER BY ID;')->value();
-                if ((int) ($draftCount !== $liveCount) !== 0) {
+                if (0 !== (int) ($draftCount !== $liveCount)) {
                     $this->flushNow(
                         'TABLE ' . $table . ' count (' . $draftCount . ')
                         is not the same as count for ' . $liveTable . ' (' . $liveCount . '),

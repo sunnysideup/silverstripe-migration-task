@@ -34,7 +34,8 @@ class CheckDataObjectStatics extends MigrateDataTaskBase
      *         ClassName => [
      *             FieldA,
      *             FieldB,
-     *     ]
+     *     ].
+     *
      * @var array
      */
     private static $no_searchable_fields = [

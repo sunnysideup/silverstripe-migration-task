@@ -17,9 +17,8 @@ use Sunnysideup\Flush\FlushNow;
   * In addition to that, it will automatically remove any tables and columns prefixed with "_obsolete".
   */
 
-
  /**
-  * Update all systems
+  * Update all systems.
   *
   * Class UpdateSystemsWithProductCodeVariantKeywords
   */
@@ -31,6 +30,7 @@ use Sunnysideup\Flush\FlushNow;
 
      /**
       * If any of these tables are found in the database, they will be removed.
+      *
       * @var array
       */
      private static $deleted_tables = [
@@ -51,6 +51,7 @@ use Sunnysideup\Flush\FlushNow;
 
      /**
       * If any of these indexes are found in any tables, they will be removed.
+      *
       * @var array
       */
      private static $deleted_indexes = [
@@ -65,12 +66,14 @@ use Sunnysideup\Flush\FlushNow;
 
          if (empty($_REQUEST['flush'])) {
              FlushNow::do_flush('ERROR: Please run flush=1 to ensure manifest is up to date');
+
              return;
          }
 
          foreach ($this->config()->deleted_tables as $tableName) {
-             if (DB::query(sprintf("SHOW TABLES LIKE '%s'", $tableName))->value() === '') {
+             if ('' === DB::query(sprintf("SHOW TABLES LIKE '%s'", $tableName))->value()) {
                  FlushNow::do_flush(sprintf('INFO: Table %s was not found ', $tableName));
+
                  continue;
              }
 
@@ -99,11 +102,13 @@ use Sunnysideup\Flush\FlushNow;
      {
          if (empty($_REQUEST['forreal'])) {
              FlushNow::do_flush(sprintf('DRY RUN: Not running query: %s', $sql));
+
              return true;
          }
 
          DB::query($sql);
          FlushNow::do_flush(sprintf('INFO: Successfully executed SQL: %s', $sql));
+
          return true;
      }
 
@@ -119,7 +124,7 @@ use Sunnysideup\Flush\FlushNow;
                  foreach (['obsolete', 'copy', 'backup'] as $string) {
                      $haystack = strtolower($table);
                      $needle = '_' . $string;
-                     if (strpos($haystack, $needle) !== false) {
+                     if (false !== strpos($haystack, $needle)) {
                          $in = true;
                      }
                  }
@@ -128,6 +133,7 @@ use Sunnysideup\Flush\FlushNow;
                  $tables[$table] = $table;
              }
          }
+
          return $tables;
      }
 
@@ -148,7 +154,7 @@ use Sunnysideup\Flush\FlushNow;
          // remove columns marked for deletion
          foreach ($this->config()->deleted_columns as $key => $columnNameArr) {
              // if the definitions were for a specific table that we're currently not processing
-             if ($key !== '*' && $key !== $tableName) {
+             if ('*' !== $key && $key !== $tableName) {
                  continue;
              }
 

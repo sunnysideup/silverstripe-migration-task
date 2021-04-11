@@ -6,7 +6,7 @@ use SilverStripe\Control\Director;
 
 /**
  * Reorganizing the SiteTree led to AsbestosLicenceHolders records being in the _Live table but not in the
- * draft table. This tasks should be run once to get rid of them
+ * draft table. This tasks should be run once to get rid of them.
  */
 class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
 {
@@ -32,7 +32,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
 
     /**
      * Implement this method in the task subclass to
-     * execute via the TaskRunner
+     * execute via the TaskRunner.
      */
     protected function performMigration()
     {
@@ -71,7 +71,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                 $isProperty = false;
                 // $this->flushNow( '...';
                 //skip lines that are indented
-                if (substr($line, 0, 1) === ' ') {
+                if (' ' === substr($line, 0, 1)) {
                     $isProperty = true;
                 }
 
@@ -80,7 +80,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                     if ($className && class_exists($className)) {
                         if (strpos($line, ':')) {
                             $myItems = explode(':', $line);
-                            if (count($myItems) === 2 && $myItems[0] && $myItems[1]) {
+                            if (2 === count($myItems) && $myItems[0] && $myItems[1]) {
                                 $property = trim($myItems[0]);
                                 $property = trim($myItems[0], "'");
                                 $property = trim($myItems[0], '"');
@@ -159,7 +159,6 @@ ERROR: Could not find class ' . $line . '<br>');
         }
 
         return $subDirs;
-
         // Return list of sub directories
     }
 
@@ -170,6 +169,7 @@ ERROR: Could not find class ' . $line . '<br>');
         foreach (glob($dir . '*.yml') as $file) {
             $files[] = $file;
         }
+
         return $files;
     }
 }

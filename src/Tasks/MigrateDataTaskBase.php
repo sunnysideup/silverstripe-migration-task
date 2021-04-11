@@ -9,7 +9,6 @@ use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
-
 use Sunnysideup\Flush\FlushNow;
 
 abstract class MigrateDataTaskBase extends BuildTask
@@ -61,17 +60,17 @@ abstract class MigrateDataTaskBase extends BuildTask
 
     /**
      * Queries the config for Migrate definitions, and runs migrations
-     * if you extend this task then overwrite it this method
+     * if you extend this task then overwrite it this method.
      */
     abstract protected function performMigration();
 
     /**
-     * @param  array $queries list of queries
-     * @param  string $name what is this list about?
+     * @param array  $queries list of queries
+     * @param string $name    what is this list about?
      */
     protected function runSQLQueries($queries, $name = 'UPDATE QUERIES')
     {
-        if ($queries !== []) {
+        if ([] !== $queries) {
             $this->flushNow('<h3>Performing ' . $name . ' Queries</h3>');
             foreach ($queries as $sqlQuery) {
                 $this->runUpdateQuery($sqlQuery);
@@ -80,13 +79,14 @@ abstract class MigrateDataTaskBase extends BuildTask
     }
 
     /**
-     * @param  array $sqlQuery list of queries
-     * @param  string $indents what is this list about?
+     * @param array  $sqlQuery list of queries
+     * @param string $indents  what is this list about?
      */
     protected function runUpdateQuery(string $sqlQuery, $indents = 1)
     {
         $this->flushNow(str_replace('"', '`', $sqlQuery), 'created');
         $prefix = str_repeat(' ... ', $indents);
+
         try {
             DB::query($sqlQuery);
             $this->flushNow($prefix . ' DONE ' . DB::affected_rows() . ' rows affected');
@@ -101,18 +101,20 @@ abstract class MigrateDataTaskBase extends BuildTask
      *      [
      *          'include_inserts' => true|false, #assumed true if not provided
      *          'old_table' => 'foo',
-     *          'new_table' => 'bar' (can be the same!)
+     *          'new_table' => 'bar' (can be the same!).
      *
      *          'simple_move_fields' => ['A', 'B', 'C']
      *          OR
      *          'complex_move_fields' => ['A' => 'Anew', 'B' => 'BBew', 'C2' => 'Cnew']
      *      ]
-     * @param  array $data list of data that is going to be moved
+     *
+     * @param array $data list of data that is going to be moved
+     *
      * @return
      */
     protected function runMoveData($data)
     {
-        if ($data !== []) {
+        if ([] !== $data) {
             $this->flushNow('<h3>Migrating data - Core Migration</h3>');
             foreach ($data as $dataItem) {
                 if (! isset($dataItem['include_inserts'])) {
@@ -171,14 +173,15 @@ abstract class MigrateDataTaskBase extends BuildTask
     }
 
     /**
-     * @param  array $publishClasses list of class names to write / publish
+     * @param array $publishClasses list of class names to write / publish
      */
     protected function runPublishClasses($publishClasses)
     {
-        if ($publishClasses !== []) {
+        if ([] !== $publishClasses) {
             $this->flushNow('<h3>Publish classes</h3>');
             foreach ($publishClasses as $publishClass) {
                 $this->flushNow('<h6>Publishing ' . $publishClass . '</h6>');
+
                 try {
                     $count = 0;
                     $publishItems = $publishClass::get();
@@ -188,7 +191,7 @@ abstract class MigrateDataTaskBase extends BuildTask
                             'Publishing ' . $count . ' of ' . $publishItems->count() .
                                 ' ' .
                                 $publishClass .
-                                ' item' . ($publishItems->count() === 1 ? '' : 's') . '.'
+                                ' item' . (1 === $publishItems->count() ? '' : 's') . '.'
                         );
                         $publishItem->write();
                         if ($publishItem->hasMethod('publishRecursive')) {
@@ -208,13 +211,16 @@ abstract class MigrateDataTaskBase extends BuildTask
     }
 
     /**
-     * Migrates data from one table to another
+     * Migrates data from one table to another.
      *
-     * @param bool | $includeInserts - the db table where we are moving fields from
-     * @param string | $tableOld - the db table where we are moving fields from
-     * @param string | $tableNew - the db table where we are moving fields to
-     * @param string | $fieldNamesOld - The current field names
-     * @param string | $fieldNamesNew - The new field names (this may be the same as $fieldNameOld)
+     * @param bool |   $includeInserts - the db table where we are moving fields from
+     * @param string | $tableOld       - the db table where we are moving fields from
+     * @param string | $tableNew       - the db table where we are moving fields to
+     * @param string | $fieldNamesOld  - The current field names
+     * @param string | $fieldNamesNew  - The new field names (this may be the same as $fieldNameOld)
+     * @param mixed    $leftJoin
+     * @param mixed    $where
+     *
      * @return string
      */
     protected function migrateSimple($includeInserts, $tableOld, $tableNew, $fieldNamesOld, $fieldNamesNew, $leftJoin, $where)
@@ -256,12 +262,12 @@ abstract class MigrateDataTaskBase extends BuildTask
                 $oldIDCount = count($oldEntryIDs);
                 if ($oldIDCount > ($allIDCount - $oldIDCount)) {
                     $excludeIDs = array_diff($allIDs, $oldEntryIDs);
-                    if (count($excludeIDs) === 0) {
+                    if (0 === count($excludeIDs)) {
                         $excludeIDs = [0];
                     }
                     $wherePhrase = ' NOT IN (' . implode(', ', $excludeIDs) . ')';
                 } else {
-                    if (count($oldEntryIDs) === 0) {
+                    if (0 === count($oldEntryIDs)) {
                         $oldEntryIDs = [0];
                     }
                     $wherePhrase = ' IN (' . implode(', ', $oldEntryIDs) . ')';
@@ -272,7 +278,7 @@ abstract class MigrateDataTaskBase extends BuildTask
                 if (count($fieldNamesNew) > 0) {
                     $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
                     $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
-                    if (substr($tableNew, -9) === '_versions') {
+                    if ('_versions' === substr($tableNew, -9)) {
                         $updateQuery .= ' AND "tablenew"."RecordID" = "tableold"."RecordID" ';
                         // also link to RecordID ...
                     }
@@ -302,12 +308,14 @@ abstract class MigrateDataTaskBase extends BuildTask
         if ($this->tableExists($tableName)) {
             if (! $this->tableExists('_obsolete_' . $tableName)) {
                 $schema->dontRequireTable($tableName);
+
                 return true;
             }
             $this->flushNow('Table ' . $tableName . ' is already obsolete');
         } else {
             $this->flushNow('Table ' . $tableName . ' does not exist.');
         }
+
         return false;
     }
 
@@ -341,27 +349,30 @@ abstract class MigrateDataTaskBase extends BuildTask
 
     protected function getSchema()
     {
-        if ($this->_schema === null) {
+        if (null === $this->_schema) {
             $this->_schema = DB::get_schema();
             $this->_schema->schemaUpdate(function () {
                 return true;
             });
         }
+
         return $this->_schema;
     }
 
     protected function getSchemaForDataObject()
     {
-        if ($this->_schemaForDataObject === null) {
+        if (null === $this->_schemaForDataObject) {
             $this->_schemaForDataObject = DataObject::getSchema();
         }
+
         return $this->_schemaForDataObject;
     }
 
     protected function getListOfIDs($tableName, $leftJoin = [], $where = '')
     {
         return $this->getListAsIterableQuery($tableName, $leftJoin = [], $where = '')
-            ->keyedColumn('ID');
+            ->keyedColumn('ID')
+        ;
     }
 
     protected function getListAsIterableQuery($tableName, $leftJoin = [], $where = '')
@@ -378,6 +389,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         }
 
         $sqlSelect->setOrderBy($tableName . '.ID');
+
         return $sqlSelect->execute();
     }
 }

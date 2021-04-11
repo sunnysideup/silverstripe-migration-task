@@ -38,7 +38,8 @@ class CheckClassNames extends MigrateDataTaskBase
      *         ClassName => [
      *             FieldA,
      *             FieldB,
-     *     ]
+     *     ].
+     *
      * @var array
      */
     private static $other_fields_to_check = [
@@ -139,10 +140,10 @@ class CheckClassNames extends MigrateDataTaskBase
                 $this->flushNow('... All rows ' . $count . ' in table ' . $tableName . ' are broken: ', 'error');
             } else {
                 $this->flushNow('... ' . $rowsToFix . ' errors in "' . $fieldName . '" values:');
-                if ($rowsToFixA !== '') {
+                if ('' !== $rowsToFixA) {
                     $this->flushNow('... ... ' . $rowsToFixA . ' in table ' . $tableName . ' do not have a ' . $fieldName . ' at all and ', 'error');
                 }
-                if ($rowsToFixB !== '') {
+                if ('' !== $rowsToFixB) {
                     $this->flushNow('... ... ' . $rowsToFixB . ' in table ' . $tableName . ' have a bad ' . $fieldName . '');
                 }
             }
@@ -155,7 +156,7 @@ class CheckClassNames extends MigrateDataTaskBase
                     }
                     $this->flushNow('... ... ' . $row['C'] . ' ' . $row[$fieldName]);
                     if (isset($this->countsOfAllClasses[$row[$fieldName]])) {
-                        if ($this->countsOfAllClasses[$row[$fieldName]] === 1) {
+                        if (1 === $this->countsOfAllClasses[$row[$fieldName]]) {
                             $longNameAlreadySlashed = array_search($row[$fieldName], $this->listOfAllClasses, true);
                             if ($longNameAlreadySlashed) {
                                 $this->flushNow('... ... ... Updating ' . $row[$fieldName] . ' to ' . $longNameAlreadySlashed . ' - based in short to long mapping of the ' . $fieldName . ' field. ', 'created');
@@ -174,7 +175,7 @@ class CheckClassNames extends MigrateDataTaskBase
                 }
 
                 //only try to work out what is going on when it is a ClassName Field!
-                if ($fieldName === 'ClassName') {
+                if ('ClassName' === $fieldName) {
                     $options = ClassInfo::subclassesFor($objectClassName);
                     $checkTables = [];
                     foreach ($options as $key => $optionClassName) {
@@ -199,7 +200,7 @@ class CheckClassNames extends MigrateDataTaskBase
                                         INNER JOIN "' . $optionTableName . '"
                                             ON "' . $optionTableName . '"."ID" = "' . $tableName . '"."ID"
                                     WHERE "' . $tableName . '"."ID" = ' . $row['ID'])->value();
-                            if ($hasMatch === 1) {
+                            if (1 === $hasMatch) {
                                 ++$optionCount;
                                 $matchedClassName = $optionClassName;
                                 if ($optionCount > 1) {
@@ -207,7 +208,7 @@ class CheckClassNames extends MigrateDataTaskBase
                                 }
                             }
                         }
-                        if ($optionCount === 0) {
+                        if (0 === $optionCount) {
                             if (! $row[$fieldName]) {
                                 $row[$fieldName] = '--- NO VALUE ---';
                             }
@@ -221,7 +222,7 @@ class CheckClassNames extends MigrateDataTaskBase
                                     2
                                 );
                             }
-                        } elseif ($optionCount === 1 && $matchedClassName) {
+                        } elseif (1 === $optionCount && $matchedClassName) {
                             $this->flushNow('... Updating ' . $fieldName . ' to ' . $matchedClassName . ' ID = ' . $row['ID'] . ', ' . $fieldName . ' = ' . $row[$fieldName] . ' - based on matching row in exactly one child class table', 'created');
                             if ($this->forReal) {
                                 $this->runUpdateQuery(
@@ -244,7 +245,7 @@ class CheckClassNames extends MigrateDataTaskBase
             }
         }
         //run again with versioned tables ...
-        if ($versionedTable === false) {
+        if (false === $versionedTable) {
             foreach (['_Live', '_Versions'] as $extension) {
                 $testTable = $tableName . $extension;
                 if ($this->tableExists($testTable)) {

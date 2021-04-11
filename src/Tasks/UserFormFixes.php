@@ -19,7 +19,6 @@ class UserFormFixes extends MigrateDataTaskBase
 
     protected function performMigration()
     {
-
         // EditableFormField
         $this->flushNowLine();
         $this->flushNow('fixing EditableFormField');
@@ -75,6 +74,7 @@ class UserFormFixes extends MigrateDataTaskBase
                     $relation = $relationClassValue::get()->byID($relationIDValue);
                     if ($relation && $relation->ClassName === $relationClassValue) {
                         $this->flushNow('... OK: ' . $object->ClassName . ' relation => ' . $relationClassValue . ' WHERE ID = ' . $relationIDValue);
+
                         continue;
                     }
                     $this->flushNow('... ERROR: : ' . $object->ClassName . ' relation => could not find: ' . $relationClassValue . ' WHERE ID = ' . $relationIDValue, 'error');

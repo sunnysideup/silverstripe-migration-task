@@ -82,7 +82,7 @@ class PublishAllFIles extends MigrateDataTaskBase
         $result = $sqlQuery->execute();
         foreach ($result as $row) {
             $file = File::get()->byID($row['ID']);
-            if ($file !== null) {
+            if (null !== $file) {
                 $name = $file->getFilename();
                 if (! $name) {
                     $file->write();
@@ -96,6 +96,7 @@ class PublishAllFIles extends MigrateDataTaskBase
                         $this->updateLocationForOneFile($file, $name);
                         $file = File::get()->byID($row['ID']);
                     }
+
                     try {
                         if ($file->exists()) {
                             $this->flushNow('... Publishing: ' . $name . ', ID = ' . $file->ID);
@@ -106,7 +107,7 @@ class PublishAllFIles extends MigrateDataTaskBase
                             $file->write();
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                             $test = DB::query('SELECT COUNT(ID) FROM File_Live WHERE ID = ' . $file->ID)->value();
-                            if ((int) $test === 0) {
+                            if (0 === (int) $test) {
                                 $this->flushNow('... error finding: ' . $name, 'deleted');
                             }
                         } else {
@@ -160,12 +161,12 @@ class PublishAllFIles extends MigrateDataTaskBase
     }
 
     /**
-     * @param int|null $parentID
+     * @param null|int $parentID
      */
     protected function compareCount($parentID = null)
     {
         $where = '';
-        if ($parentID === null) {
+        if (null === $parentID) {
         } else {
             $where = ' WHERE ParentID = ' . $parentID;
         }
@@ -179,7 +180,7 @@ class PublishAllFIles extends MigrateDataTaskBase
                 Draft and Live DO NOT have the same amount of items ' . $where . ', ' . $count1 . ' not equal ' . $count2 . '',
                 'deleted'
             );
-            if ($parentID === null) {
+            if (null === $parentID) {
                 $parentIDs = File::get()->column('ParentID');
                 $parentIDs = array_unique($parentIDs);
                 foreach ($parentIDs as $parentID) {
