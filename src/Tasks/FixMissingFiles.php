@@ -68,10 +68,10 @@ class FixMissingFiles extends BuildTask
     }
 
     /**
-     * @param array  $sqlQuery list of queries
-     * @param string $indents  what is this list about?
+     * @param string $sqlQuery list of queries
+     * @param int    $indents  what is this list about?
      */
-    protected function runUpdateQuery(string $sqlQuery, $indents = 1)
+    protected function runUpdateQuery(string $sqlQuery, ?int $indents = 1)
     {
         $this->flushNow(str_replace('"', '`', $sqlQuery), 'created');
         $prefix = str_repeat(' ... ', $indents);

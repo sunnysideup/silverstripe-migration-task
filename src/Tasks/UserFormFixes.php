@@ -3,6 +3,7 @@
 namespace Sunnysideup\MigrateData\Tasks;
 
 use SilverStripe\CMS\Model\SiteTree;
+use SilverStripe\ORM\DataList;
 use SilverStripe\UserForms\Model\EditableFormField;
 use SilverStripe\UserForms\Model\Recipient\EmailRecipient;
 use SilverStripe\UserForms\Model\Submission\SubmittedForm;
@@ -60,7 +61,10 @@ class UserFormFixes extends MigrateDataTaskBase
         }
     }
 
-    protected function writeObjects($objects, $parentClassName, $field)
+    /**
+     * @param DataList $objects
+     */
+    protected function writeObjects($objects, string $parentClassName, string $field)
     {
         $classField = $field . 'Class';
         $idField = $field . 'ID';
@@ -78,6 +82,7 @@ class UserFormFixes extends MigrateDataTaskBase
                         continue;
                     }
                     $this->flushNow('... ERROR: : ' . $object->ClassName . ' relation => could not find: ' . $relationClassValue . ' WHERE ID = ' . $relationIDValue, 'error');
+                    /** @var SiteTree $page */
                     $page = $parentClassName::get()->byID($relationIDValue);
                     if ($page) {
                         $this->flushNow('... FIXING ' . $object->getTitle());
@@ -85,7 +90,7 @@ class UserFormFixes extends MigrateDataTaskBase
                         $this->writeInner($object);
                         $this->flushNow('... FIXING: setting ' . $relationClassValue . ' WHERE ID = ' . $relationIDValue . ' to ' . $page->ClassName, 'repaired');
                     } else {
-                        $this->flushNow('... Skipping page (should extend ' . $parentClassName . ') with ID: ' . $page->ID . ' as it could not be found.');
+                        $this->flushNow('... Skipping page (should extend ' . $parentClassName . ') with ID: ' . $relationIDValue . ' as it could not be found.');
                     }
                 } else {
                     $this->flushNow(

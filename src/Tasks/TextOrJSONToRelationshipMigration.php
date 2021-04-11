@@ -56,7 +56,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     private static $data_to_fix = [];
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     protected function performMigration()
     {
