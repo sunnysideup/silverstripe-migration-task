@@ -1,6 +1,6 @@
 <?php
 
-namespace Sunnysideup\MigrateData\Tasks;
+namespace Sunnysideup\MigrateData\Tasks\ImportSql;
 
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Environment;
@@ -8,7 +8,7 @@ use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
 use Sunnysideup\Flush\FlushNow;
 
-class ImportDecisions extends BuildTask
+class ImportSql extends BuildTask
 {
 
     private static $file_names = [
@@ -20,13 +20,13 @@ class ImportDecisions extends BuildTask
      * standard SS variable
      * @var String
      */
-    protected $title = "Import Decisions";
+    protected $title = "Import SQL";
 
     /**
      * standard SS variable
      * @var String
      */
-    protected $description = "Import data from an SQL file";
+    protected $description = "CAREFUL!!! - Import data from an SQL file";
 
     public function isEnabled()
     {
