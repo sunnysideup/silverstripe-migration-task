@@ -9,6 +9,7 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Versioned\Versioned;
+use Sunnysideup\Flush\FlushNow;
 
 class PublishAllFiles extends MigrateDataTaskBase
 {
@@ -65,9 +66,9 @@ class PublishAllFiles extends MigrateDataTaskBase
         }
         if ($parentID) {
             $folder = Folder::get()->byID($parentID);
-            $this->flushNow('<h3>Processing Folder: ' . $folder->getFilename() . '</h3>');
+            FlushNow::do_flush('<h3>Processing Folder: ' . $folder->getFilename() . '</h3>');
         } else {
-            $this->flushNow('<h3>Processing Root Folder</h3>');
+            FlushNow::do_flush('<h3>Processing Root Folder</h3>');
         }
         $sqlQuery = new SQLSelect();
         $sqlQuery->setFrom('File');
@@ -96,7 +97,7 @@ class PublishAllFiles extends MigrateDataTaskBase
 
                     try {
                         if ($file->exists()) {
-                            $this->flushNow('... Publishing: ' . $name . ', ID = ' . $file->ID);
+                            FlushNow::do_flush('... Publishing: ' . $name . ', ID = ' . $file->ID);
                             if ($this->generateThumbnails) {
                                 $this->admin->generateThumbnails($file);
                             }
@@ -105,16 +106,16 @@ class PublishAllFiles extends MigrateDataTaskBase
                             $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                             $test = DB::query('SELECT COUNT(ID) FROM File_Live WHERE ID = ' . $file->ID)->value();
                             if (0 === (int) $test) {
-                                $this->flushNow('... error finding: ' . $name, 'deleted');
+                                FlushNow::do_flush('... error finding: ' . $name, 'deleted');
                             }
                         } else {
-                            $this->flushNow('... Error in publishing V2 ...' . print_r($file->toMap(), 1), 'deleted');
+                            FlushNow::do_flush('... Error in publishing V2 ...' . print_r($file->toMap(), 1), 'deleted');
                         }
                     } catch (\Exception $exception) {
-                        $this->flushNow('... Error in publishing V1 ...' . print_r($file->toMap(), 1), 'deleted');
+                        FlushNow::do_flush('... Error in publishing V1 ...' . print_r($file->toMap(), 1), 'deleted');
                     }
                 } else {
-                    $this->flushNow('... Error in finding name for ' . print_r($file->toMap(), 1), 'deleted');
+                    FlushNow::do_flush('... Error in finding name for ' . print_r($file->toMap(), 1), 'deleted');
                 }
 
                 $file->destroy();
@@ -148,7 +149,7 @@ class PublishAllFiles extends MigrateDataTaskBase
                 mkdir($targetDir, 0755, true);
             }
 
-            $this->flushNow($originalDir . $name . ' > ' . $targetDir . basename($name), 'obsolete');
+            FlushNow::do_flush($originalDir . $name . ' > ' . $targetDir . basename($name), 'obsolete');
 
             rename(
                 $originalDir . $name,
@@ -170,9 +171,9 @@ class PublishAllFiles extends MigrateDataTaskBase
         $count1 = DB::query('SELECT COUNT("ID") FROM "File" ' . $where)->value();
         $count2 = DB::query('SELECT COUNT("ID") FROM "File_Live" ' . $where)->value();
         if ($count1 === $count2) {
-            $this->flushNow('<h1>Draft and Live have the same amount of items ' . $where . '</h1>', 'created');
+            FlushNow::do_flush('<h1>Draft and Live have the same amount of items ' . $where . '</h1>', 'created');
         } else {
-            $this->flushNow(
+            FlushNow::do_flush(
                 '
                 Draft and Live DO NOT have the same amount of items ' . $where . ', ' . $count1 . ' not equal ' . $count2 . '',
                 'deleted'

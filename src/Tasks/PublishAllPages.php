@@ -34,11 +34,11 @@ class PublishAll extends BuildTask
             if (Director::is_cli() || SecurityToken::inst()->checkRequest($request)) {
                 $start = 0;
                 $pages = SiteTree::get()->limit($this->step, $start);
-                $this->flushNow('<ol>');
+                FlushNow::do_flush('<ol>');
                 $count = 0;
                 while ($pages && $pages->count()) {
                     foreach ($pages as $page) {
-                        $this->flushNow('publishing: '.$page->Title, 'created');
+                        FlushNow::do_flush('publishing: '.$page->Title, 'created');
                         $page->writeToStage(Versioned::DRAFT);
                         $page->publish(Versioned::DRAFT, Versioned::LIVE);
                         $page->publishRecursive();
@@ -49,8 +49,8 @@ class PublishAll extends BuildTask
                     $start += $this->step;
                     $pages = SiteTree::get()->limit($this->step, $start);
                 }
-                $this->flushNow('</ol>');
-                $this->flushNow('<h2>--- PUBLISHED '.$count.' Pages ---</h2>');
+                FlushNow::do_flush('</ol>');
+                FlushNow::do_flush('<h2>--- PUBLISHED '.$count.' Pages ---</h2>');
             } else {
                 return Controller::curr()->httpError(400);
             }
@@ -75,12 +75,8 @@ class PublishAll extends BuildTask
                     . _t(__CLASS__ . '.PUBALLCONFIRM', 'Please publish every page in the site', 'Confirmation button') .'" />'
                     . $tokenHtml .
                 '</form>';
-            $this->flushNow($response);
+            FlushNow::do_flush($response);
         }
     }
 
-    public function flushNow($content, $style = '')
-    {
-        FlushNow::do_flush($content, $style);
-    }
 }
