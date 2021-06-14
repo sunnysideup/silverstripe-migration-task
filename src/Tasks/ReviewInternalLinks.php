@@ -2,22 +2,15 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\Core\Convert;
-use SilverStripe\Control\Director;
-use SilverStripe\Control\Controller;
 use SilverStripe\Core\Environment;
-use SilverStripe\Dev\BuildTask;
-use SilverStripe\Security\SecurityToken;
 use SilverStripe\CMS\Model\SiteTree;
-use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DB;
 use SilverStripe\Versioned\Versioned;
 use Page;
 
 use DOMDocument;
-use DOMXPath;
 
-class ReviewInternalLinks extends BaseTask
+class ReviewInternalLinks extends MigrateDataTaskBase
 {
     protected $title = 'Review Internal Links';
 
@@ -273,4 +266,8 @@ class ReviewInternalLinks extends BaseTask
         }
     }
 
+    protected function performMigration()
+    {
+
+    }
 }
