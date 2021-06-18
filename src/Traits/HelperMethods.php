@@ -175,4 +175,38 @@ trait HelperMethods
 
         return $sqlSelect->execute();
     }
+
+
+
+    protected function writeObject($obj, $row, $isPage = false)
+    {
+        DataObject::Config()->set('validation_enabled', false);
+        if ($isPage || $obj->hasExtension(Versioned::class) || $obj instanceof SiteTree) {
+            $obj->writeToStage(Versioned::DRAFT);
+            $obj->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+        } else {
+            $obj->write();
+        }
+    }
+
+
+    protected function writePage($obj, $row)
+    {
+        return $this->writeObject($obj, $row, $isPage = true);
+    }
+
+    public function deleteObject($obj)
+    {
+        if ($obj->exists()) {
+            FlushNow::do_flush('DELETING '.$obj->ClassName.'.'.$obj->ID, 'deleted');
+            if ($obj->hasExtension(Versioned::class)) {
+                $obj->DeleteFromStage(Versioned::LIVE);
+                $obj->DeleteFromStage(Versioned::DRAFT);
+            } else {
+                $obj->delete();
+            }
+        } else {
+            FlushNow::do_flush('DOES NOT EXIST', 'added');
+        }
+    }
 }
