@@ -36,7 +36,6 @@ class ImportSql extends BuildTask
 
     public function run($request)
     {
-        $this->helper = ConvertHelpers::create($this);
 
         foreach ($this->config()->get('file_names') as $fileName) {
             FlushNow::do_flush("<hr /><hr /><hr /><hr /><hr /><hr /><hr />START: '.$fileName.'<hr /><hr /><hr /><hr /><hr /><hr /><hr />");
@@ -81,8 +80,5 @@ class ImportSql extends BuildTask
         FlushNow::do_flush("<hr /><hr /><hr /><hr /><hr /><hr /><hr />COMPLETED<hr /><hr /><hr /><hr /><hr /><hr /><hr />");
     }
 
-    public function flushNow($content, $style = '')
-    {
-        FlushNow::do_flush($content, $style);
-    }
+
 }
