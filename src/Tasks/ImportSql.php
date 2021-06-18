@@ -1,6 +1,6 @@
 <?php
 
-namespace Sunnysideup\MigrateData\Tasks\ImportSql;
+namespace Sunnysideup\MigrateData\Tasks;
 
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Environment;
