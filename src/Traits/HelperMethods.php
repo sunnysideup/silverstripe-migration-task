@@ -9,6 +9,7 @@ use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
+use SilverStripe\Versioned\Versioned;
 use Sunnysideup\Flush\FlushNow;
 
 trait HelperMethods
