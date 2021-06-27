@@ -3,9 +3,6 @@
 namespace Sunnysideup\MigrateData\Traits;
 
 use Exception;
-use SilverStripe\Core\Config\Config;
-use SilverStripe\Core\Environment;
-use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
@@ -15,6 +12,21 @@ use Sunnysideup\Flush\FlushNow;
 trait HelperMethods
 {
     use FlushNow;
+
+    public function deleteObject($obj)
+    {
+        if ($obj->exists()) {
+            FlushNow::do_flush('DELETING ' . $obj->ClassName . '.' . $obj->ID, 'deleted');
+            if ($obj->hasExtension(Versioned::class)) {
+                $obj->DeleteFromStage(Versioned::LIVE);
+                $obj->DeleteFromStage(Versioned::DRAFT);
+            } else {
+                $obj->delete();
+            }
+        } else {
+            FlushNow::do_flush('DOES NOT EXIST', 'added');
+        }
+    }
 
     /**
      * @param array  $queries list of queries
@@ -177,8 +189,6 @@ trait HelperMethods
         return $sqlSelect->execute();
     }
 
-
-
     protected function writeObject($obj, $row, $isPage = false)
     {
         DataObject::Config()->set('validation_enabled', false);
@@ -190,24 +200,8 @@ trait HelperMethods
         }
     }
 
-
     protected function writePage($obj, $row)
     {
         return $this->writeObject($obj, $row, $isPage = true);
-    }
-
-    public function deleteObject($obj)
-    {
-        if ($obj->exists()) {
-            FlushNow::do_flush('DELETING '.$obj->ClassName.'.'.$obj->ID, 'deleted');
-            if ($obj->hasExtension(Versioned::class)) {
-                $obj->DeleteFromStage(Versioned::LIVE);
-                $obj->DeleteFromStage(Versioned::DRAFT);
-            } else {
-                $obj->delete();
-            }
-        } else {
-            FlushNow::do_flush('DOES NOT EXIST', 'added');
-        }
     }
 }

@@ -8,7 +8,6 @@ use SilverStripe\Core\Environment;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
-use SilverStripe\ORM\Queries\SQLSelect;
 use Sunnysideup\Flush\FlushNow;
 use Sunnysideup\MigrateData\Traits\HelperMethods;
 
@@ -16,7 +15,6 @@ abstract class MigrateDataTaskBase extends BuildTask
 {
     use FlushNow;
     use HelperMethods;
-
 
     protected $title = 'Abstract Migration Class';
 
@@ -236,5 +234,4 @@ abstract class MigrateDataTaskBase extends BuildTask
             $this->flushNow($e->getMessage(), 'error');
         }
     }
-
 }

@@ -2,14 +2,13 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use SilverStripe\Control\Director;
+use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
+use SilverStripe\Control\Director;
 use SilverStripe\Core\Environment;
 use SilverStripe\Dev\BuildTask;
-use SilverStripe\Security\SecurityToken;
-use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Forms\FieldList;
-use SilverStripe\ORM\DB;
+use SilverStripe\Security\SecurityToken;
 use SilverStripe\Versioned\Versioned;
 use Sunnysideup\Flush\FlushNow;
 
@@ -38,19 +37,19 @@ class PublishAll extends BuildTask
                 $count = 0;
                 while ($pages && $pages->count()) {
                     foreach ($pages as $page) {
-                        FlushNow::do_flush('publishing: '.$page->Title, 'created');
+                        FlushNow::do_flush('publishing: ' . $page->Title, 'created');
                         $page->writeToStage(Versioned::DRAFT);
                         $page->publish(Versioned::DRAFT, Versioned::LIVE);
                         $page->publishRecursive();
                         $page->destroy();
                         unset($page);
-                        $count++;
+                        ++$count;
                     }
                     $start += $this->step;
                     $pages = SiteTree::get()->limit($this->step, $start);
                 }
                 FlushNow::do_flush('</ol>');
-                FlushNow::do_flush('<h2>--- PUBLISHED '.$count.' Pages ---</h2>');
+                FlushNow::do_flush('<h2>--- PUBLISHED ' . $count . ' Pages ---</h2>');
             } else {
                 return Controller::curr()->httpError(400);
             }
@@ -72,11 +71,10 @@ class PublishAll extends BuildTask
                 <p>' . $publishAllDescription . '</p>
                 <form method="get" action="">
                     <input type="submit" name="confirm" value="'
-                    . _t(__CLASS__ . '.PUBALLCONFIRM', 'Please publish every page in the site', 'Confirmation button') .'" />'
+                    . _t(__CLASS__ . '.PUBALLCONFIRM', 'Please publish every page in the site', 'Confirmation button') . '" />'
                     . $tokenHtml .
                 '</form>';
             FlushNow::do_flush($response);
         }
     }
-
 }
