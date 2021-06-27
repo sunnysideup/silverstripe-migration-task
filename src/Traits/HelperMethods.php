@@ -79,7 +79,7 @@ trait HelperMethods
                             'Publishing ' . $count . ' of ' . $publishItems->count() .
                                 ' ' .
                                 $publishClass .
-                                ' item' . (1 === $publishItems->count() ? '' : 's') . '.'
+                                ' item' . (1 === $publishItems->exists() ? '' : 's') . '.'
                         );
                         $publishItem->write();
                         if ($publishItem->hasMethod('publishRecursive')) {

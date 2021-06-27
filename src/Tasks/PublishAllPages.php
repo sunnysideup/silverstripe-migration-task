@@ -35,7 +35,7 @@ class PublishAll extends BuildTask
                 $pages = SiteTree::get()->limit($this->step, $start);
                 FlushNow::do_flush('<ol>');
                 $count = 0;
-                while ($pages && $pages->count()) {
+                while ($pages->exists()) {
                     foreach ($pages as $page) {
                         FlushNow::do_flush('publishing: ' . $page->Title, 'created');
                         $page->writeToStage(Versioned::DRAFT);
