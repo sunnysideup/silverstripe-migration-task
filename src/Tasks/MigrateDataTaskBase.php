@@ -92,7 +92,7 @@ abstract class MigrateDataTaskBase extends BuildTask
                     $dataItem['leftJoin'] = [];
                 }
                 if (! isset($dataItem['where'])) {
-                    $dataItem['where'] = [];
+                    $dataItem['where'] = '';
                 }
                 if (! isset($dataItem['include_inserts'])) {
                     $dataItem['include_inserts'] = true;
