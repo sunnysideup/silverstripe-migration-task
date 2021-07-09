@@ -192,7 +192,7 @@ trait HelperMethods
     protected function writeObject($obj, $row, $isPage = false)
     {
         DataObject::Config()->set('validation_enabled', false);
-        if ($isPage || $obj->hasExtension(Versioned::class) || $obj instanceof SiteTree) {
+        if ($obj->hasMethod('writeToStage')) {
             $obj->writeToStage(Versioned::DRAFT);
             $obj->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
         } else {
