@@ -189,7 +189,7 @@ trait HelperMethods
         return $sqlSelect->execute();
     }
 
-    protected function writeObject($obj, $row, $isPage = false)
+    protected function writeObject($obj, ?array $row = [], ?bool $isPage = false)
     {
         DataObject::Config()->set('validation_enabled', false);
         if ($obj->hasMethod('writeToStage')) {
@@ -198,6 +198,7 @@ trait HelperMethods
         } else {
             $obj->write();
         }
+        $obj->flushCache();
     }
 
     protected function writePage($obj, $row)

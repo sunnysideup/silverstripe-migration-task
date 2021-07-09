@@ -72,7 +72,7 @@ class UserFormFixes extends MigrateDataTaskBase
             $this->flushNow('-');
             $relationClassValue = $object->{$classField};
             $relationIDValue = $object->{$idField};
-            $this->writeInner($object);
+            $this->writeObject($object);
             if (class_exists($relationClassValue)) {
                 if ($relationIDValue) {
                     $relation = $relationClassValue::get()->byID($relationIDValue);
