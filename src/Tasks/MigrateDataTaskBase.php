@@ -229,9 +229,9 @@ abstract class MigrateDataTaskBase extends BuildTask
                     $this->runUpdateQuery($updateQuery);
                 }
             }
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $this->flushNow("Unable to migrate {$tableOld} to {$tableNew}.", 'error');
-            $this->flushNow($e->getMessage(), 'error');
+            $this->flushNow($exception->getMessage(), 'error');
         }
     }
 }

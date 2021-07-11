@@ -78,8 +78,8 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 } else {
                     $isPage = true;
                     $limit = 500;
-                    $start = $limit * (intval($request->getVar('page')) - 1);
-                    echo '<h1>Page: ' . intval($request->getVar('page')) . '</h1>';
+                    $start = $limit * ((int) $request->getVar('page') - 1);
+                    echo '<h1>Page: ' . (int) $request->getVar('page') . '</h1>';
                 }
             } else {
                 $isPage = false;
@@ -88,7 +88,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 $start = 0;
                 echo '<h1>Random Selection</h1>';
             }
-            for ($i = 0; $i < $limit; $i = $i + $this->step) {
+            for ($i = 0; $i < $limit; $i += $this->step) {
                 if ($isPage) {
                     $objects = SiteTree::get()->sort('ID', 'ASC')->limit($this->step, $i + $start);
                 }
@@ -237,7 +237,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 $replacementURL = str_replace($oldNeedle, $newNeedle, $url);
 
                 // if($this->urlExists($url) === false && $this->urlExists($replacementURL) === true) {
-                if (strpos($url, '\'')) {
+                if (strpos($url, "'")) {
                     user_error('bad url: ' . $url);
                 }
                 if ('Content' === $field) {
