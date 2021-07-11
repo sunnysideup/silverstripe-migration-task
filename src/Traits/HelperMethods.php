@@ -195,6 +195,7 @@ trait HelperMethods
         if ($obj->hasMethod('writeToStage')) {
             $obj->writeToStage(Versioned::DRAFT);
             $obj->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+            $obj->publishRecursive();
         } else {
             $obj->write();
         }
