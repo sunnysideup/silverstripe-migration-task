@@ -23,6 +23,7 @@ trait HelperMethods
             } else {
                 $obj->delete();
             }
+            @$obj->flushCache();
         } else {
             FlushNow::do_flush('DOES NOT EXIST', 'added');
         }
