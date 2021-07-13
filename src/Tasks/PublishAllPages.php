@@ -47,7 +47,7 @@ class PublishAll extends BuildTask
                     foreach ($pages as $page) {
                         FlushNow::do_flush('publishing: ' . $page->Title, 'created');
                         $page->writeToStage(Versioned::DRAFT);
-                        $page->publish(Versioned::DRAFT, Versioned::LIVE);
+                        $page->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                         $page->publishRecursive();
                         $page->destroy();
                         unset($page);
