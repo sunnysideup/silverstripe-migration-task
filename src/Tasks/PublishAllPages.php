@@ -24,11 +24,19 @@ class PublishAll extends BuildTask
 
     protected $step = 10;
 
+    protected $allowed = true;
+
+    public function setAllowed(?bool $allowed = true) : self
+    {
+        $this->allowed = $allowed;
+        return $this;
+    }
+
     public function run($request)
     {
         Environment::increaseTimeLimitTo();
         Environment::increaseMemoryLimitTo();
-        if ($request->requestVar('confirm') || Director::is_cli()) {
+        if ($request->requestVar('confirm') || Director::is_cli() || $this->allowed) {
             // Protect against CSRF on destructive action
             if (Director::is_cli() || SecurityToken::inst()->checkRequest($request)) {
                 $start = 0;
