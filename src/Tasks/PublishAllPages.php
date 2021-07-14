@@ -24,11 +24,19 @@ class PublishAllPages extends BuildTask
 
     protected $step = 10;
 
+    protected $allowed = true;
+
+    public function setAllowed(?bool $allowed = true) : self
+    {
+        $this->allowed = $allowed;
+        return $this;
+    }
+
     public function run($request)
     {
         Environment::increaseTimeLimitTo();
         Environment::increaseMemoryLimitTo();
-        if ($request->requestVar('confirm') || Director::is_cli()) {
+        if ($request->requestVar('confirm') || Director::is_cli() || $this->allowed) {
             // Protect against CSRF on destructive action
             if (Director::is_cli() || SecurityToken::inst()->checkRequest($request)) {
                 $start = 0;
@@ -39,7 +47,7 @@ class PublishAllPages extends BuildTask
                     foreach ($pages as $page) {
                         FlushNow::do_flush('publishing: ' . $page->Title, 'created');
                         $page->writeToStage(Versioned::DRAFT);
-                        $page->publish(Versioned::DRAFT, Versioned::LIVE);
+                        $page->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                         $page->publishRecursive();
                         $page->destroy();
                         unset($page);
