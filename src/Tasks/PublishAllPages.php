@@ -60,7 +60,8 @@ class PublishAllPages extends BuildTask
                 FlushNow::do_flush('</ol>');
                 FlushNow::do_flush('<h2>--- PUBLISHED ' . $count . ' Pages ---</h2>');
             } else {
-                return Controller::curr()->httpError(400);
+                Controller::curr()->httpError(400);
+                return;
             }
         } else {
             $response = '';

@@ -6,6 +6,7 @@ use DOMDocument;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Core\Environment;
 use SilverStripe\ORM\DB;
+use SilverStripe\ORM\DataList;
 
 class ReviewInternalLinks extends MigrateDataTaskBase
 {
@@ -55,6 +56,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         if ($request->getVar('type')) {
             $this->type = $request->getVar('type');
         }
+        $objects = DataList::create();
         if (count($ids)) {
             echo $tableHTML;
             $objects = SiteTree::get()->sort('ID', 'ASC')->filter(['ID' => $ids]);
@@ -89,6 +91,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 echo '<h1>Random Selection</h1>';
             }
             for ($i = 0; $i < $limit; $i += $this->step) {
+                $objects = null;
                 if ($isPage) {
                     $objects = SiteTree::get()->sort('ID', 'ASC')->limit($this->step, $i + $start);
                 }
@@ -148,54 +151,51 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         $links = [];
         foreach ($this->fieldsToTest as $field) {
             if (! empty($object->{$field})) {
-                $dom = new DOMDocument();
                 $dom = new \DOMDocument();
 
                 @$dom->loadHTML(
                     mb_convert_encoding($object->{$field}, 'HTML-ENTITIES', 'UTF-8'),
                     LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
                 );
-                if (false === $dom) {
+                if (! $dom) {
                     $links[] = 'Error 1 in ' . $field;
 
                     continue;
                 }
-                if ($dom) {
-                    if (! $this->type || 'a' === strtolower($this->type)) {
-                        $hrefs = $dom->getElementsByTagName('a');
-                        for ($i = 0; $i < $hrefs->length; ++$i) {
-                            $href = $hrefs->item($i);
-                            $url = $href->getAttribute('href');
-                            $this->cleanupLittleMistake($object, $field, $url);
+                if (! $this->type || 'a' === strtolower($this->type)) {
+                    $hrefs = $dom->getElementsByTagName('a');
+                    for ($i = 0; $i < $hrefs->length; ++$i) {
+                        $href = $hrefs->item($i);
+                        $url = $href->getAttribute('href');
+                        $this->cleanupLittleMistake($object, $field, $url);
 
-                            $links[$url] = $url . ' | A | ' . $field;
+                        $links[$url] = $url . ' | A | ' . $field;
 
-                            if (! isset($this->allLinks[$url])) {
-                                $this->allLinks[$url] = [
-                                    'count' => 0,
-                                    'type' => 'A',
-                                ];
-                            }
-                            ++$this->allLinks[$url]['count'];
+                        if (! isset($this->allLinks[$url])) {
+                            $this->allLinks[$url] = [
+                                'count' => 0,
+                                'type' => 'A',
+                            ];
                         }
+                        ++$this->allLinks[$url]['count'];
                     }
-                    if (! $this->type || 'img' === strtolower($this->type)) {
-                        $hrefs = $dom->getElementsByTagName('img');
-                        for ($i = 0; $i < $hrefs->length; ++$i) {
-                            $href = $hrefs->item($i);
-                            $url = $href->getAttribute('src');
-                            $this->cleanupLittleMistake($object, $field, $url);
+                }
+                if (! $this->type || 'img' === strtolower($this->type)) {
+                    $hrefs = $dom->getElementsByTagName('img');
+                    for ($i = 0; $i < $hrefs->length; ++$i) {
+                        $href = $hrefs->item($i);
+                        $url = $href->getAttribute('src');
+                        $this->cleanupLittleMistake($object, $field, $url);
 
-                            $links[$url] = $url . ' | IMG | ' . $field;
+                        $links[$url] = $url . ' | IMG | ' . $field;
 
-                            if (! isset($this->allLinks[$url])) {
-                                $this->allLinks[$url] = [
-                                    'count' => 0,
-                                    'type' => 'IMG',
-                                ];
-                            }
-                            ++$this->allLinks[$url]['count'];
+                        if (! isset($this->allLinks[$url])) {
+                            $this->allLinks[$url] = [
+                                'count' => 0,
+                                'type' => 'IMG',
+                            ];
                         }
+                        ++$this->allLinks[$url]['count'];
                     }
                 } else {
                     $links[] = 'Error 2 in ' . $field;
@@ -235,7 +235,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         foreach ($oldNeedles as $oldNeedle => $newNeedle) {
             if (false !== strpos($url, $oldNeedle)) {
                 $replacementURL = str_replace($oldNeedle, $newNeedle, $url);
-
+                $table = '';
                 // if($this->urlExists($url) === false && $this->urlExists($replacementURL) === true) {
                 if (strpos($url, "'")) {
                     user_error('bad url: ' . $url);

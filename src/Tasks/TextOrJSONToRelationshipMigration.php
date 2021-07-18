@@ -221,6 +221,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     {
         $key = $className . '_' . $lookupMethod;
         if (! isset($this->lookupClassNames[$key])) {
+            /** @var array $fields */
             $fields = Config::inst()->get($className, 'has_many');
             $fields += Config::inst()->get($className, 'many_many');
             $fields += Config::inst()->get($className, 'belongs_many_many');

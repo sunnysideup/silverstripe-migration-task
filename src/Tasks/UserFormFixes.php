@@ -82,7 +82,7 @@ class UserFormFixes extends MigrateDataTaskBase
                         continue;
                     }
                     $this->flushNow('... ERROR: : ' . $object->ClassName . ' relation => could not find: ' . $relationClassValue . ' WHERE ID = ' . $relationIDValue, 'error');
-                    /** @var SiteTree $page */
+                    /** @var SiteTree|null $page */
                     $page = $parentClassName::get()->byID($relationIDValue);
                     if ($page) {
                         $this->flushNow('... FIXING ' . $object->getTitle());
