@@ -26,9 +26,10 @@ class PublishAllPages extends BuildTask
 
     protected $allowed = true;
 
-    public function setAllowed(?bool $allowed = true) : self
+    public function setAllowed(?bool $allowed = true): self
     {
         $this->allowed = $allowed;
+
         return $this;
     }
 
