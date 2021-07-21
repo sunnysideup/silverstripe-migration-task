@@ -2,11 +2,10 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use DOMDocument;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Core\Environment;
-use SilverStripe\ORM\DB;
 use SilverStripe\ORM\DataList;
+use SilverStripe\ORM\DB;
 
 class ReviewInternalLinks extends MigrateDataTaskBase
 {
