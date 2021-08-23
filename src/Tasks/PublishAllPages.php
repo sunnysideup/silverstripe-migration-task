@@ -62,7 +62,7 @@ class PublishAllPages extends BuildTask
                     foreach ($pages as $page) {
                         $isPublished = $page->IsPublished();
                         FlushNow::do_flush('publishing: ' . $page->Title, 'created');
-                        $page->writeToStage(Versioned::DRAFT);
+                        $page->writeToStage(Versioned::DRAFT, true);
                         if($isPublished) {
                             $page->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                             $page->publishRecursive();
