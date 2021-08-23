@@ -6,10 +6,14 @@ use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Environment;
+
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Security\SecurityToken;
 use SilverStripe\Versioned\Versioned;
+
+use SilverStripe\ORM\DataObject;
 use Sunnysideup\Flush\FlushNow;
 
 /**
@@ -46,6 +50,7 @@ class PublishAllPages extends BuildTask
     {
         Environment::increaseTimeLimitTo();
         Environment::increaseMemoryLimitTo();
+        Config::modify()->set(DataObject::class, 'validation_enabled', false);
         if ($request->requestVar('confirm') || Director::is_cli() || $this->allowed) {
             // Protect against CSRF on destructive action
             if (Director::is_cli() || SecurityToken::inst()->checkRequest($request)) {
