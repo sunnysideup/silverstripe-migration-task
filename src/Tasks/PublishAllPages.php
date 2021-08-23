@@ -26,9 +26,18 @@ class PublishAllPages extends BuildTask
 
     protected $allowed = true;
 
+    protected $onlyPublishedPages = false;
+
     public function setAllowed(?bool $allowed = true): self
     {
         $this->allowed = $allowed;
+
+        return $this;
+    }
+
+    public function setOnlyPublishedPages(?bool $bool = true): self
+    {
+        $this->onlyPublishedPages = $bool;
 
         return $this;
     }
@@ -46,10 +55,13 @@ class PublishAllPages extends BuildTask
                 $count = 0;
                 while ($pages->exists()) {
                     foreach ($pages as $page) {
+                        $isPublished = $page->IsPublished();
                         FlushNow::do_flush('publishing: ' . $page->Title, 'created');
                         $page->writeToStage(Versioned::DRAFT);
-                        $page->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
-                        $page->publishRecursive();
+                        if($isPublished) {
+                            $page->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+                            $page->publishRecursive();
+                        }
                         $page->destroy();
                         unset($page);
                         ++$count;
