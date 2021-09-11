@@ -5,15 +5,13 @@ namespace Sunnysideup\MigrateData\Tasks;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
-use SilverStripe\Core\Environment;
-
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Environment;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\Forms\FieldList;
+use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\SecurityToken;
 use SilverStripe\Versioned\Versioned;
-
-use SilverStripe\ORM\DataObject;
 use Sunnysideup\Flush\FlushNow;
 
 /**
@@ -63,7 +61,7 @@ class PublishAllPages extends BuildTask
                         $isPublished = $page->IsPublished();
                         FlushNow::do_flush('publishing: ' . $page->Title, 'created');
                         $page->writeToStage(Versioned::DRAFT, true);
-                        if($isPublished) {
+                        if ($isPublished) {
                             $page->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                             $page->publishRecursive();
                         }
