@@ -200,7 +200,7 @@ class CheckClassNames extends MigrateDataTaskBase
                                         INNER JOIN "' . $optionTableName . '"
                                             ON "' . $optionTableName . '"."ID" = "' . $tableName . '"."ID"
                                     WHERE "' . $tableName . '"."ID" = ' . $row['ID'])->value();
-                            if (1 === $hasMatch) {
+                            if (1 == $hasMatch) {
                                 ++$optionCount;
                                 $matchedClassName = $optionClassName;
                                 if ($optionCount > 1) {

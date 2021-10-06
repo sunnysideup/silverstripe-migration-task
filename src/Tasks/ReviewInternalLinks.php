@@ -156,11 +156,11 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                     mb_convert_encoding($object->{$field}, 'HTML-ENTITIES', 'UTF-8'),
                     LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
                 );
-                if (! $dom) {
-                    $links[] = 'Error 1 in ' . $field;
-
-                    continue;
-                }
+                // if (! $dom) {
+                //     $links[] = 'Error 1 in ' . $field;
+                //
+                //     continue;
+                // }
                 if (! $this->type || 'a' === strtolower($this->type)) {
                     $hrefs = $dom->getElementsByTagName('a');
                     for ($i = 0; $i < $hrefs->length; ++$i) {

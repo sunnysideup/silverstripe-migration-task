@@ -2,11 +2,10 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use SilverStripe\Assets\File;
 use SilverStripe\Control\Director;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
-
-use SilverStripe\Assets\File;
 
 /**
  * Update all systems.
@@ -48,7 +47,7 @@ class CleanUpSS4Files extends BuildTask
             SELECT "Filename", "ID"
             FROM "File"
             WHERE
-                "ClassName" = \''.addslashes(File::class).'\'
+                "ClassName" = \'' . addslashes(File::class) . '\'
             ORDER BY Filename ASC';
         $rows = DB::query($sql);
         $baseDir = Director::baseFolder() . '/public/';

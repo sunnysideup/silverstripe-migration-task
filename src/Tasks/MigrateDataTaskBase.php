@@ -200,7 +200,7 @@ abstract class MigrateDataTaskBase extends BuildTask
                     }
                     $wherePhrase = ' NOT IN (' . implode(', ', $excludeIDs) . ')';
                 } else {
-                    if (0 === count($oldEntryIDs)) {
+                    if (0 == count($oldEntryIDs)) {
                         $oldEntryIDs = [0];
                     }
                     $wherePhrase = ' IN (' . implode(', ', $oldEntryIDs) . ')';
