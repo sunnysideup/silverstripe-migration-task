@@ -130,8 +130,8 @@ class CheckClassNames extends MigrateDataTaskBase
         $this->flushNow('... CHECKING ' . $tableName . '.' . $fieldName . ' ...');
         $count = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '"')->value();
         $where = '"' . $fieldName . '" NOT IN (\'' . implode("', '", array_keys($this->listOfAllClasses)) . "')";
-        $whereA = $where . ' AND ( "' . $fieldName . '" IS NULL OR "' . $fieldName . "\" = '' )";
-        $whereB = $where . ' AND NOT ( "' . $fieldName . '" IS NULL OR "' . $fieldName . "\" = '' )";
+        $whereA = $where . ' AND '.'('. '"' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\' )';
+        $whereB = $where . ' AND NOT '.'('. '"' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\' )';
         $rowsToFix = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $where)->value();
         $rowsToFixA = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $whereA)->value();
         $rowsToFixB = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $whereB)->value();
@@ -140,10 +140,10 @@ class CheckClassNames extends MigrateDataTaskBase
                 $this->flushNow('... All rows ' . $count . ' in table ' . $tableName . ' are broken: ', 'error');
             } else {
                 $this->flushNow('... ' . $rowsToFix . ' errors in "' . $fieldName . '" values:');
-                if ('' !== $rowsToFixA) {
+                if ($rowsToFixA) {
                     $this->flushNow('... ... ' . $rowsToFixA . ' in table ' . $tableName . ' do not have a ' . $fieldName . ' at all and ', 'error');
                 }
-                if ('' !== $rowsToFixB) {
+                if ($rowsToFixB) {
                     $this->flushNow('... ... ' . $rowsToFixB . ' in table ' . $tableName . ' have a bad ' . $fieldName . '');
                 }
             }
@@ -188,6 +188,7 @@ class CheckClassNames extends MigrateDataTaskBase
                             }
                         }
                     }
+                    //fix bad rows....
                     $rows = DB::query('SELECT "ID", "' . $fieldName . '" FROM "' . $tableName . '" WHERE ' . $where);
                     foreach ($rows as $row) {
                         //check if it is the short name ...
@@ -233,7 +234,34 @@ class CheckClassNames extends MigrateDataTaskBase
                                 );
                             }
                         } else {
-                            $this->flushNow('... ERROR: can not find best ' . $fieldName . ' for ' . $tableName . '.ID = ' . $row['ID'] . ' current value: ' . $row[$fieldName], 'error');
+                            $values = Injector::inst()
+                                ->get($objectClassName)
+                                ->dbObject($fieldName)
+                                ->enumValues(false);
+                            $sql = '
+                                SELECT '.$fieldName.', COUNT(*) AS magnitude
+                                FROM '.$tableName.'
+                                GROUP BY '.$fieldName.'
+                                ORDER BY magnitude DESC
+                                LIMIT 1';
+                            $bestValue = '';
+                            $rowsForBestValue = DB::query($sql);
+                            foreach($rowsForBestValue as $rowForBestValue) {
+                                if(in_array($rowForBestValue[$fieldName], $values, true)) {
+                                    $bestValue = $rowForBestValue[$fieldName];
+                                    break;
+                                }
+                            }
+                            if(! $bestValue) {
+                                $bestValue = key($values);
+                            }
+                            $this->flushNow('... ERROR: can not find best ' . $fieldName . ' for ' . $tableName . '.ID = ' . $row['ID'] . ' current value: ' . $row[$fieldName].' we recommend: '.$bestValue, 'error');
+                            $this->runUpdateQuery(
+                                'UPDATE "' . $tableName . '"
+                                SET "' . $tableName . '"."' . $fieldName . '" = \'' . addslashes($bestValue) . '\'
+                                WHERE ID = ' . $row['ID'],
+                                2
+                            );
                         }
                     }
                 } else {
