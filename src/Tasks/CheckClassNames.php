@@ -130,8 +130,8 @@ class CheckClassNames extends MigrateDataTaskBase
         $this->flushNow('... CHECKING ' . $tableName . '.' . $fieldName . ' ...');
         $count = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '"')->value();
         $where = '"' . $fieldName . '" NOT IN (\'' . implode("', '", array_keys($this->listOfAllClasses)) . "')";
-        $whereA = $where . ' AND '.'('. '"' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\' )';
-        $whereB = $where . ' AND NOT '.'('. '"' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\' )';
+        $whereA = $where . ' AND ' . '(' . '"' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\' )';
+        $whereB = $where . ' AND NOT ' . '(' . '"' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\' )';
         $rowsToFix = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $where)->value();
         $rowsToFixA = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $whereA)->value();
         $rowsToFixB = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $whereB)->value();
@@ -237,25 +237,27 @@ class CheckClassNames extends MigrateDataTaskBase
                             $values = Injector::inst()
                                 ->get($objectClassName)
                                 ->dbObject($fieldName)
-                                ->enumValues(false);
+                                ->enumValues(false)
+                            ;
                             $sql = '
-                                SELECT '.$fieldName.', COUNT(*) AS magnitude
-                                FROM '.$tableName.'
-                                GROUP BY '.$fieldName.'
+                                SELECT ' . $fieldName . ', COUNT(*) AS magnitude
+                                FROM ' . $tableName . '
+                                GROUP BY ' . $fieldName . '
                                 ORDER BY magnitude DESC
                                 LIMIT 1';
                             $bestValue = '';
                             $rowsForBestValue = DB::query($sql);
-                            foreach($rowsForBestValue as $rowForBestValue) {
-                                if(in_array($rowForBestValue[$fieldName], $values, true)) {
+                            foreach ($rowsForBestValue as $rowForBestValue) {
+                                if (in_array($rowForBestValue[$fieldName], $values, true)) {
                                     $bestValue = $rowForBestValue[$fieldName];
+
                                     break;
                                 }
                             }
-                            if(! $bestValue) {
+                            if (! $bestValue) {
                                 $bestValue = key($values);
                             }
-                            $this->flushNow('... ERROR: can not find best ' . $fieldName . ' for ' . $tableName . '.ID = ' . $row['ID'] . ' current value: ' . $row[$fieldName].' we recommend: '.$bestValue, 'error');
+                            $this->flushNow('... ERROR: can not find best ' . $fieldName . ' for ' . $tableName . '.ID = ' . $row['ID'] . ' current value: ' . $row[$fieldName] . ' we recommend: ' . $bestValue, 'error');
                             $this->runUpdateQuery(
                                 'UPDATE "' . $tableName . '"
                                 SET "' . $tableName . '"."' . $fieldName . '" = \'' . addslashes($bestValue) . '\'
