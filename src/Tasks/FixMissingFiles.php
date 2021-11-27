@@ -45,19 +45,19 @@ class FixMissingFiles extends BuildTask
                 FileFilename is not NULL LIMIT 1
             ";
             $result = DB::query($sql);
-
-            if ($healthy_row = $result->first()) {
-                echo 'Fixing' . $healthy_row['Name'];
+            $healthyRow = $result->first();
+            if ($healthyRow) {
+                echo 'Fixing' . $healthyRow['Name'];
                 $this->runUpdateQuery(
                     'UPDATE "' . 'File' . '"
-                    SET "' . 'File' . '"."' . 'FileHash' . '" = \'' . $healthy_row['FileHash'] . '\'
+                    SET "' . 'File' . '"."' . 'FileHash' . '" = \'' . $healthyRow['FileHash'] . '\'
                     WHERE ID = ' . $row['ID'],
                     2
                 );
 
                 $this->runUpdateQuery(
                     'UPDATE "' . 'File' . '"
-                    SET "' . 'File' . '"."' . 'FileFilename' . '" = \'' . $healthy_row['FileFilename'] . '\'
+                    SET "' . 'File' . '"."' . 'FileFilename' . '" = \'' . $healthyRow['FileFilename'] . '\'
                     WHERE ID = ' . $row['ID'],
                     2
                 );
