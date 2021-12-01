@@ -65,7 +65,7 @@ class PublishAllFiles extends MigrateDataTaskBase
             return;
         }
         if ($parentID) {
-            $folder = Folder::get()->byID($parentID);
+            $folder = Folder::get_by_id($parentID);
             FlushNow::do_flush('<h3>Processing Folder: ' . $folder->getFilename() . '</h3>');
         } else {
             FlushNow::do_flush('<h3>Processing Root Folder</h3>');
@@ -79,7 +79,7 @@ class PublishAllFiles extends MigrateDataTaskBase
         // Execute and return a Query object
         $result = $sqlQuery->execute();
         foreach ($result as $row) {
-            $file = File::get()->byID($row['ID']);
+            $file = File::get_by_id($row['ID']);
             if (null !== $file) {
                 $name = $file->getFilename();
                 if (! $name) {
@@ -92,7 +92,7 @@ class PublishAllFiles extends MigrateDataTaskBase
                 if ($name) {
                     if ($this->updateLocation) {
                         $this->updateLocationForOneFile($file, $name);
-                        $file = File::get()->byID($row['ID']);
+                        $file = File::get_by_id($row['ID']);
                     }
 
                     try {

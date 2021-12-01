@@ -173,7 +173,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
         if ('' !== $fieldValue) {
             $array = @json_decode($fieldValue, false);
             if (! empty($array)) {
-                $obj = $className::get()->byID($id);
+                $obj = $className::get_by_id($id);
                 $lookupClassName = $this->getlookupClassName($className, $lookupMethod);
                 $obj->{$lookupMethod}()->removeAll();
                 foreach ($array as $value) {

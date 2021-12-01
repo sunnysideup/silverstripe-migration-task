@@ -256,7 +256,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 $this->replacements[] = [
                     'from' => $url,
                     'to' => $replacementURL,
-                    'result' => SiteTree::get()->byID($object->ID)->{$field},
+                    'result' => SiteTree::get_by_id($object->ID)->{$field},
                 ];
             }
         }
