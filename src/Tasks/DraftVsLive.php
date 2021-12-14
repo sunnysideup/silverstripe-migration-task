@@ -16,6 +16,8 @@ class DraftVsLive extends MigrateDataTaskBase
 
     protected $missingColumns = [];
 
+    protected $deleteLiveOnlyRecords = true;
+
     protected function performMigration()
     {
         //get tables in DB
@@ -33,6 +35,9 @@ class DraftVsLive extends MigrateDataTaskBase
             $this->missingColumns[$table] = [];
             $liveTable = $table . '_Live';
             if ($this->tableExists($liveTable)) {
+                if($this->deleteLiveOnlyRecords) {
+                    $this->deleteLiveOnlyRecords($table, $liveTable);
+                }
                 //check count
                 $draftCount = (int) DB::query('SELECT COUNT(ID) FROM ' . $table . ' ORDER BY ID;')->value();
                 $liveCount = (int) DB::query('SELECT COUNT(ID) FROM ' . $liveTable . ' ORDER BY ID;')->value();
@@ -83,8 +88,8 @@ class DraftVsLive extends MigrateDataTaskBase
                     '... ... DRAFT !== LIVE for <strong>' . $table . '</strong>, ' .
                     'ID <strong>' . $draftRow['ID'] . '</strong>, ' .
                     'FIELD: <strong>' . $key . '</strong>:
-                    (' . strip_tags(substr(print_r($draftRow[$key], 1), 0, 100)) . ')
-                    (' . strip_tags(substr(print_r($liveRow[$key], 1), 0, 100)) . ') === ',
+                    <span style="color: purple">' . strip_tags(substr(print_r($draftRow[$key], 1), 0, 100)) . '</span> !==
+                    <span style="color: orange">' . strip_tags(substr(print_r($liveRow[$key], 1), 0, 100)) . '</span>  ',
                     'deleted'
                 );
             }
@@ -122,6 +127,25 @@ class DraftVsLive extends MigrateDataTaskBase
         }
         if (! $backwards) {
             $this->compareColumnsInner($rowB, $rowA, $table, true);
+        }
+    }
+
+    protected function deleteLiveOnlyRecords(string $tableNameDraft, string $tableNameLive)
+    {
+        $rows = DB::query('
+            SELECT "'.$tableNameLive.'"."ID"
+            FROM "'.$tableNameLive.'"
+            LEFT JOIN  "'.$tableNameDraft.'" ON "'.$tableNameLive.'"."ID" = "'.$tableNameDraft.'"."ID"
+            WHERE "'.$tableNameDraft.'"."ID" IS NULL;
+        ');
+        foreach($rows as $row) {
+            $this->flushNow(
+                'Deleting from '.$tableNameLive.' where ID = '.$row['ID'],
+                'deleted'
+            );
+            DB::query('
+                DELETE FROM "'.$tableNameLive.'" WHERE ID = '.$row['ID'].';
+            ');
         }
     }
 }
