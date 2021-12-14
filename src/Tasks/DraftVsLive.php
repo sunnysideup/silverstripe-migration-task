@@ -16,7 +16,7 @@ class DraftVsLive extends MigrateDataTaskBase
 
     protected $missingColumns = [];
 
-    protected $deleteLiveOnlyRecords = true;
+    protected $deleteLiveOnlyRecords = false;
 
     protected function performMigration()
     {
