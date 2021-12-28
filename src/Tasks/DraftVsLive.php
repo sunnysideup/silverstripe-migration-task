@@ -35,7 +35,7 @@ class DraftVsLive extends MigrateDataTaskBase
             $this->missingColumns[$table] = [];
             $liveTable = $table . '_Live';
             if ($this->tableExists($liveTable)) {
-                if($this->deleteLiveOnlyRecords) {
+                if ($this->deleteLiveOnlyRecords) {
                     $this->deleteLiveOnlyRecords($table, $liveTable);
                 }
                 //check count
@@ -133,18 +133,18 @@ class DraftVsLive extends MigrateDataTaskBase
     protected function deleteLiveOnlyRecords(string $tableNameDraft, string $tableNameLive)
     {
         $rows = DB::query('
-            SELECT "'.$tableNameLive.'"."ID"
-            FROM "'.$tableNameLive.'"
-            LEFT JOIN  "'.$tableNameDraft.'" ON "'.$tableNameLive.'"."ID" = "'.$tableNameDraft.'"."ID"
-            WHERE "'.$tableNameDraft.'"."ID" IS NULL;
+            SELECT "' . $tableNameLive . '"."ID"
+            FROM "' . $tableNameLive . '"
+            LEFT JOIN  "' . $tableNameDraft . '" ON "' . $tableNameLive . '"."ID" = "' . $tableNameDraft . '"."ID"
+            WHERE "' . $tableNameDraft . '"."ID" IS NULL;
         ');
-        foreach($rows as $row) {
+        foreach ($rows as $row) {
             $this->flushNow(
-                'Deleting from '.$tableNameLive.' where ID = '.$row['ID'],
+                'Deleting from ' . $tableNameLive . ' where ID = ' . $row['ID'],
                 'deleted'
             );
             DB::query('
-                DELETE FROM "'.$tableNameLive.'" WHERE ID = '.$row['ID'].';
+                DELETE FROM "' . $tableNameLive . '" WHERE ID = ' . $row['ID'] . ';
             ');
         }
     }
