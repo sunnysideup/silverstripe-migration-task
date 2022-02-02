@@ -24,7 +24,7 @@ class FixMissingFiles extends BuildTask
      * @var string
      */
     protected $description = 'When duplicate records exist for the same file in SS3 the silverstripe
-		data migration task will only update one. Causing the other files to "go missing". This task fixes that';
+        data migration task will only update one. Causing the other files to "go missing". This task fixes that';
 
     /**
      * Fix broken file references and publish them.
