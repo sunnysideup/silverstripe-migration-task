@@ -26,6 +26,8 @@ class CheckClassNames extends MigrateDataTaskBase
 
     protected $fixErrors = true;
 
+    protected $extendFieldSize = true;
+
     protected $forReal = true;
 
     protected $dataObjectSchema;
@@ -105,7 +107,7 @@ class CheckClassNames extends MigrateDataTaskBase
                     }
                     foreach ($allFields as $fieldName) {
                         if ($this->fieldExists($tableName, $fieldName)) {
-                            $this->fixingClassNames($tableName, $objectClassName, $fieldName);
+                            $this->fixClassNames($tableName, $objectClassName, $fieldName);
                         } else {
                             $this->flushNow('... Can not find: ' . $tableName . '.' . $fieldName . ' in database.');
                         }
@@ -125,7 +127,7 @@ class CheckClassNames extends MigrateDataTaskBase
         }
     }
 
-    protected function fixingClassNames($tableName, $objectClassName, $fieldName = 'ClassName', $versionedTable = false)
+    protected function fixClassNames(string $tableName, string $objectClassName, ?string $fieldName = 'ClassName', ?bool $versionedTable = false)
     {
         $this->flushNow('... CHECKING ' . $tableName . '.' . $fieldName . ' ...');
         $count = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '"')->value();
@@ -148,6 +150,9 @@ class CheckClassNames extends MigrateDataTaskBase
                 }
             }
             if ($this->fixErrors) {
+                if($this->extendFieldSize) {
+                    $this->fixFieldSize($tableName);
+                }
                 //work out if we can set it to the long form of a short ClassName
                 $rows = DB::query('SELECT ' . $fieldName . ', COUNT("ID") AS C FROM ' . $tableName . ' GROUP BY "' . $fieldName . '" HAVING ' . $where . ' ORDER BY C DESC');
                 foreach ($rows as $row) {
@@ -279,11 +284,17 @@ class CheckClassNames extends MigrateDataTaskBase
             foreach (['_Live', '_Versions'] as $extension) {
                 $testTable = $tableName . $extension;
                 if ($this->tableExists($testTable)) {
-                    $this->fixingClassNames($testTable, $objectClassName, $fieldName, true);
+                    $this->fixClassNames($testTable, $objectClassName, $fieldName, true);
                 } else {
                     $this->flushNow('... ... there is no table called: ' . $testTable);
                 }
             }
         }
+    }
+
+    protected function fixFieldSize($tableName)
+    {
+        $databaseName = DB::get_conn()->getSelectedDatabase();
+        DB::query('ALTER TABLE "' . $databaseName . '"."'.$tableName.'" CHANGE ClassName ClassName VARCHAR(255);');
     }
 }

@@ -126,6 +126,28 @@ trait HelperMethods
         return $this->_cacheTableExists[$tableName];
     }
 
+    protected function renameTable(string $databaseName, string $a, string $b)
+    {
+        if ($this->tableExists($a)) {
+            if ($this->tableExists($b)) {
+                $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' . $b . ';');
+                if ($itemsInDB->numRecords() > 0) {
+                    $this->renameTable($databaseName, $b, $b.'_BACKUP');
+                    $this->flushNow('Backing up ' . $b, 'deleted');
+                }
+                $this->flushNow('Deleting ' . $b, 'deleted');
+                DB::query('DROP TABLE ' . $b . ';');
+            }
+
+            if (! $this->tableExists($b)) {
+                $this->flushNow('Moving ' . $a . ' to ' . $b, 'created');
+                DB::query(' RENAME TABLE ' . $databaseName . '.' . $a . ' TO ' . $b . ';');
+            } else {
+                $this->flushNow('Could not delete ' . $b, 'deleted');
+            }
+        }
+    }
+
     protected function fieldExists(string $tableName, string $fieldName): bool
     {
         $key = $tableName . '_' . $fieldName;
