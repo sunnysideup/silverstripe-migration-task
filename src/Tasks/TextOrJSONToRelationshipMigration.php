@@ -9,7 +9,6 @@ use SilverStripe\Versioned\Versioned;
 /**
  * Used to debug a QueueJob.
  *
- *  @todo: UPGRADE: remove after upgrade
  */
 class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
 {

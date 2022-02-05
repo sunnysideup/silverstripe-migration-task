@@ -5,7 +5,7 @@ namespace Sunnysideup\MigrateData\Tasks;
 use SilverStripe\Control\Director;
 
 /**
- * Reorganizing the SiteTree led to AsbestosLicenceHolders records being in the _Live table but not in the
+ * Reorganizing the SiteTree led to records being in the _Live table but not in the
  * draft table. This tasks should be run once to get rid of them.
  */
 class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase

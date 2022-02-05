@@ -26,7 +26,7 @@ use Sunnysideup\Flush\FlushNow;
  {
      protected $title = 'Delete all obsolete tables and fields';
 
-     protected $description = 'Remove all tables and fields with the words _obselete, _copy, or _backup in it. Set forreal=1 to run it for real';
+     protected $description = 'Remove all tables and fields with the words _obsolete, _copy, or _backup in it. Set forreal=1 to run it for real';
 
      /**
       * If any of these tables are found in the database, they will be removed.
