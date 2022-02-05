@@ -126,6 +126,11 @@ trait HelperMethods
         return $this->_cacheTableExists[$tableName];
     }
 
+    protected function clearTable(string $tableName)
+    {
+        DB::getConn()->clearTable($table);
+    }
+
     protected function renameTable(string $databaseName, string $a, string $b)
     {
         if ($this->tableExists($a)) {
