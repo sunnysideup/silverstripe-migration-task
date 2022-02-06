@@ -131,16 +131,18 @@ trait HelperMethods
     {
         if ($this->tableExists($a)) {
             if ($this->tableExists($b)) {
-                $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' . $b . ';');
+                $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' .  $this->removeDoubleSlashesForTableNames($b) . ';');
                 if ($itemsInDB->numRecords() > 0 && $keepBackup) {
                     $this->replaceTable($databaseName, $b, $b.'_BACKUP');
                     $this->flushNow('Backing up ' . $b, 'deleted');
                 }
                 $this->flushNow('Deleting ' . $b, 'deleted');
-                DB::query('DROP TABLE "' . $b . '";');
+                DB::query('DROP TABLE "' . $this->removeDoubleSlashesForTableNames($b). '";');
             }
 
             if (! $this->tableExists($b)) {
+                $a = $this->removeDoubleSlashesForTableNames($a);
+                $b = $this->removeDoubleSlashesForTableNames($b);
                 $this->renameTable($a, $b);
             } else {
                 $this->flushNow('Could not delete ' . $b, 'deleted');
@@ -150,6 +152,8 @@ trait HelperMethods
 
     protected function renameTable(string $a, string $b)
     {
+        $a = $this->removeDoubleSlashesForTableNames($a);
+        $b = $this->removeDoubleSlashesForTableNames($b);
         $this->flushNow('Moving "' . $a . '" to "' . $b.'"', 'created');
         $this->getSchema()->renameTable($a, $b);
     }
@@ -234,5 +238,14 @@ trait HelperMethods
     protected function writePage($obj, $row)
     {
         return $this->writeObject($obj, $row, $isPage = true);
+    }
+
+    protected function removeDoubleSlashesForTableNames(string $tableName) : string
+    {
+        if(strpos('\\\\', $tableName)) {
+            $tableName = str_replace('\\\\', '\\', $tableName);
+        }
+
+        return $tableName;
     }
 }
