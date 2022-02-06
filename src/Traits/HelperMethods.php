@@ -116,14 +116,10 @@ trait HelperMethods
         return false;
     }
 
-    protected function tableExists(string $tableName): bool
+    protected function tableExists(string $tableName, ?bool $forceRefresh = false): bool
     {
-        if (! isset($this->_cacheTableExists[$tableName])) {
-            $schema = $this->getSchema();
-            $this->_cacheTableExists[$tableName] = ((bool) $schema->hasTable($tableName));
-        }
-
-        return $this->_cacheTableExists[$tableName];
+        $schema = $this->getSchema();
+        return ((bool) $schema->hasTable($tableName));
     }
 
     protected function clearTable(string $tableName)
