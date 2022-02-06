@@ -128,7 +128,7 @@ trait HelperMethods
 
     protected function clearTable(string $tableName)
     {
-        DB::getConn()->clearTable($table);
+        DB::get_conn()->clearTable($tableName);
     }
 
     protected function renameTable(string $databaseName, string $a, string $b, ?bool $keepBackup = false)
