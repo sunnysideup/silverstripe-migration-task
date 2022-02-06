@@ -133,21 +133,25 @@ trait HelperMethods
             if ($this->tableExists($b)) {
                 $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' . $b . ';');
                 if ($itemsInDB->numRecords() > 0 && $keepBackup) {
-                    $this->renameTable($databaseName, $b, $b.'_BACKUP');
+                    $this->replaceTable($databaseName, $b, $b.'_BACKUP');
                     $this->flushNow('Backing up ' . $b, 'deleted');
                 }
                 $this->flushNow('Deleting ' . $b, 'deleted');
-                DB::query('DROP TABLE ' . $b . ';');
+                DB::query('DROP TABLE "' . $b . '";');
             }
 
             if (! $this->tableExists($b)) {
-                $this->getSchema()->renameTable($a, $b);
-                $this->flushNow('Moving ' . $a . ' to ' . $b, 'created');
-                DB::query(' RENAME TABLE ' . $databaseName . '.' . $a . ' TO ' . $b . ';');
+                $this->renameTable($a, $b);
             } else {
                 $this->flushNow('Could not delete ' . $b, 'deleted');
             }
         }
+    }
+
+    protected function renameTable(string $a, string $b)
+    {
+        $this->flushNow('Moving "' . $a . '" to "' . $b.'"', 'created');
+        $this->getSchema()->renameTable($a, $b);
     }
 
     protected function fieldExists(string $tableName, string $fieldName): bool
