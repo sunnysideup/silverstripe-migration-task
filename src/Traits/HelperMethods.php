@@ -127,7 +127,7 @@ trait HelperMethods
         DB::get_conn()->clearTable($tableName);
     }
 
-    protected function renameTable(string $databaseName, string $a, string $b, ?bool $keepBackup = false)
+    protected function replaceTable(string $a, string $b, ?bool $keepBackup = false)
     {
         if ($this->tableExists($a)) {
             if ($this->tableExists($b)) {
@@ -141,6 +141,7 @@ trait HelperMethods
             }
 
             if (! $this->tableExists($b)) {
+                $this->getSchema()->renameTable($a, $b);
                 $this->flushNow('Moving ' . $a . ' to ' . $b, 'created');
                 DB::query(' RENAME TABLE ' . $databaseName . '.' . $a . ' TO ' . $b . ';');
             } else {
