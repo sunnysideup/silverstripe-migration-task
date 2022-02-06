@@ -57,6 +57,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         $this->flushNowLine();
         $this->flushNow('THE END');
         $this->flushNowLine();
+        $this->flushNow('');
     }
 
     /**

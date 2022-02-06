@@ -157,7 +157,13 @@ class CheckClassNames extends MigrateDataTaskBase
                     $this->fixFieldSize($tableName);
                 }
                 //work out if we can set it to the long form of a short ClassName
-                $rows = DB::query('SELECT ' . $fieldName . ', COUNT("ID") AS C FROM ' . $tableName . ' GROUP BY "' . $fieldName . '" HAVING ' . $where . ' ORDER BY C DESC');
+                $rows = DB::query('
+                    SELECT ' . $fieldName . ', COUNT("ID") AS C
+                    FROM ' . $tableName . '
+                    GROUP BY "' . $fieldName . '"
+                    HAVING ' . $where . '
+                    ORDER BY C DESC'
+                );
                 foreach ($rows as $row) {
                     if (! $row[$fieldName]) {
                         $row[$fieldName] = '--- NO VALUE ---';
