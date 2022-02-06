@@ -158,8 +158,8 @@ class CheckClassNames extends MigrateDataTaskBase
                 }
                 //work out if we can set it to the long form of a short ClassName
                 $rows = DB::query('
-                    SELECT ' . $fieldName . ', COUNT("ID") AS C
-                    FROM ' . $tableName . '
+                    SELECT "' . $fieldName . '", COUNT("ID") AS C
+                    FROM "' . $tableName . '"
                     GROUP BY "' . $fieldName . '"
                     HAVING ' . $where . '
                     ORDER BY C DESC'
