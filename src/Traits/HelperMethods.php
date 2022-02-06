@@ -136,7 +136,7 @@ trait HelperMethods
                     $this->makeObsolete($b, $b.'_BACKUP');
                     $this->flushNow('Backing up ' . $b, 'deleted');
                 }
-                $this->dropTable($tableName);
+                $this->dropTable($b);
             }
 
             if (! $this->tableExists($b)) {
