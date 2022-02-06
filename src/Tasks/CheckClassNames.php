@@ -9,6 +9,9 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DataObjectSchema;
 use SilverStripe\ORM\DB;
 use SilverStripe\Versioned\Versioned;
+use Page;
+
+use SilverStripe\CMS\Model\SiteTree;
 
 class CheckClassNames extends MigrateDataTaskBase
 {
@@ -239,29 +242,7 @@ class CheckClassNames extends MigrateDataTaskBase
                                 );
                             }
                         } else {
-                            $values = Injector::inst()
-                                ->get($objectClassName)
-                                ->dbObject($fieldName)
-                                ->enumValues(false)
-                            ;
-                            $sql = '
-                                SELECT ' . $fieldName . ', COUNT(*) AS magnitude
-                                FROM ' . $tableName . '
-                                GROUP BY ' . $fieldName . '
-                                ORDER BY magnitude DESC
-                                LIMIT 1';
-                            $bestValue = '';
-                            $rowsForBestValue = DB::query($sql);
-                            foreach ($rowsForBestValue as $rowForBestValue) {
-                                if (in_array($rowForBestValue[$fieldName], $values, true)) {
-                                    $bestValue = $rowForBestValue[$fieldName];
-
-                                    break;
-                                }
-                            }
-                            if (! $bestValue) {
-                                $bestValue = key($values);
-                            }
+                            $bestValue = $this->bestClassName($objectClassName, $tableName, $fieldName);
                             $this->flushNow('... ERROR: can not find best ' . $fieldName . ' for ' . $tableName . '.ID = ' . $row['ID'] . ' current value: ' . $row[$fieldName] . ' we recommend: ' . $bestValue, 'error');
                             $this->runUpdateQuery(
                                 'UPDATE "' . $tableName . '"
@@ -296,5 +277,46 @@ class CheckClassNames extends MigrateDataTaskBase
     {
         $databaseName = DB::get_conn()->getSelectedDatabase();
         DB::query('ALTER TABLE "' . $databaseName . '"."'.$tableName.'" CHANGE ClassName ClassName VARCHAR(255);');
+    }
+
+    protected $bestClassNameStore = [];
+
+    protected function bestClassName( string $objectClassName, string $tableName, string $fieldName) : string
+    {
+        $keyForStore = $objectClassName.'_'.$tableName .'_'. $fieldName;
+        if (! isset($this->bestClassNameStore[$keyForStore])) {
+            $obj = Injector::inst()
+                ->get($objectClassName);
+            if($obj instanceof SiteTree) {
+                if(class_exists(Page::class)) {
+                    $this->bestClassNameStore[$keyForStore] = 'Page';
+                    return $this->bestClassNameStore[$keyForStore];
+                }
+            }
+            $values = $obj
+                ->dbObject($fieldName)
+                ->enumValues(false)
+            ;
+            $sql = '
+                SELECT ' . $fieldName . ', COUNT(*) AS magnitude
+                FROM ' . $tableName . '
+                GROUP BY ' . $fieldName . '
+                ORDER BY magnitude DESC
+                LIMIT 1';
+            $bestValue = '';
+            $rowsForBestValue = DB::query($sql);
+            foreach ($rowsForBestValue as $rowForBestValue) {
+                if (in_array($rowForBestValue[$fieldName], $values, true)) {
+                    $bestValue = $rowForBestValue[$fieldName];
+
+                    break;
+                }
+            }
+            if (! $bestValue) {
+                $bestValue = key($values);
+            }
+            $this->bestClassNameStore[$keyForStore] = $bestValue;
+        }
+        return $this->bestClassNameStore[$keyForStore];
     }
 }
