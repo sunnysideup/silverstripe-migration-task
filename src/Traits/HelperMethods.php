@@ -133,11 +133,10 @@ trait HelperMethods
             if ($this->tableExists($b)) {
                 $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' .  $this->removeDoubleSlashesForTableNames($b) . ';');
                 if ($itemsInDB->numRecords() > 0 && $keepBackup) {
-                    $this->replaceTable($databaseName, $b, $b.'_BACKUP');
+                    $this->makeObsolete($b, $b.'_BACKUP');
                     $this->flushNow('Backing up ' . $b, 'deleted');
                 }
-                $this->flushNow('Deleting ' . $b, 'deleted');
-                DB::query('DROP TABLE "' . $this->removeDoubleSlashesForTableNames($b). '";');
+                $this->dropTable($tableName);
             }
 
             if (! $this->tableExists($b)) {
@@ -150,11 +149,26 @@ trait HelperMethods
         }
     }
 
+    protected function makeObsolete(string $tableName)
+    {
+        $this->flushNow('Making obsolete ' . $tableName, 'deleted');
+        $this->getSchema()->dontRequireTable($tableName);
+
+        //backup!
+        $this->replaceTable($tableName, '_obsolete'.$tableName.'_99');
+    }
+
+    protected function dropTable(string $tableName)
+    {
+        $this->flushNow('Deleting ' . $tableName, 'deleted');
+        DB::query('DROP TABLE "' . $this->removeDoubleSlashesForTableNames($tableName). '";');
+    }
+
     protected function renameTable(string $a, string $b)
     {
         $a = $this->removeDoubleSlashesForTableNames($a);
         $b = $this->removeDoubleSlashesForTableNames($b);
-        $this->flushNow('Moving "' . $a . '" to "' . $b.'"', 'created');
+        $this->flushNow('Moving "' . $a . '" to "' . $b.'"', 'warning');
         $this->getSchema()->renameTable($a, $b);
     }
 
