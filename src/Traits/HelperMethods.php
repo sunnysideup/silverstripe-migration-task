@@ -131,12 +131,12 @@ trait HelperMethods
         DB::getConn()->clearTable($table);
     }
 
-    protected function renameTable(string $databaseName, string $a, string $b)
+    protected function renameTable(string $databaseName, string $a, string $b, ?bool $keepBackup = false)
     {
         if ($this->tableExists($a)) {
             if ($this->tableExists($b)) {
                 $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' . $b . ';');
-                if ($itemsInDB->numRecords() > 0) {
+                if ($itemsInDB->numRecords() > 0 && $keepBackup) {
                     $this->renameTable($databaseName, $b, $b.'_BACKUP');
                     $this->flushNow('Backing up ' . $b, 'deleted');
                 }
