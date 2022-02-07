@@ -131,17 +131,15 @@ trait HelperMethods
     {
         if ($this->tableExists($a)) {
             if ($this->tableExists($b)) {
-                $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' .  $this->removeDoubleSlashesForTableNames($b) . ';');
+                $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' .  stripslashes($b) . ';');
                 if ($itemsInDB->numRecords() > 0 && $keepBackup) {
                     $this->makeObsolete($b, $b.'_BACKUP');
                     $this->flushNow('Backing up ' . $b, 'deleted');
                 }
-                $this->dropTable($b);
+                $this->dropTable(stripslashes($b));
             }
 
             if (! $this->tableExists($b)) {
-                $a = $this->removeDoubleSlashesForTableNames($a);
-                $b = $this->removeDoubleSlashesForTableNames($b);
                 $this->renameTable($a, $b);
             } else {
                 $this->flushNow('Could not delete ' . $b, 'deleted');
@@ -161,14 +159,28 @@ trait HelperMethods
     protected function dropTable(string $tableName)
     {
         $this->flushNow('Deleting ' . $tableName, 'deleted');
-        DB::query('DROP TABLE "' . $this->removeDoubleSlashesForTableNames($tableName). '";');
+        DB::query('DROP TABLE "' . stripslashes($tableName). '";');
     }
 
     protected function renameTable(string $a, string $b)
     {
-        $a = $this->removeDoubleSlashesForTableNames($a);
-        $b = $this->removeDoubleSlashesForTableNames($b);
+        if(
+            $a !== stripslashes($a) ||
+            $b !==  stripslashes($b)
+        ) {
+            $this->flushNow('Special slashes case "' . $a . '" to "' . $b.'"', 'warning');
+            DB::query("ALTER TABLE \"".stripslashes($a)."\" RENAME \"".stripslashes($b)."\"");
+            return;
+        }
         $this->flushNow('Moving "' . $a . '" to "' . $b.'"', 'warning');
+        if(!$this->tableExists($a)) {
+            $this->flushNow(' -- Could not find "' . $a . '", consider using replaceTable', 'deleted');
+            return;
+        }
+        if($this->tableExists($b)) {
+            $this->flushNow(' -- Destination table already exists "' . $b . '", consider using replaceTable', 'deleted');
+            return;
+        }
         $this->getSchema()->renameTable($a, $b);
     }
 
@@ -254,12 +266,4 @@ trait HelperMethods
         return $this->writeObject($obj, $row, $isPage = true);
     }
 
-    protected function removeDoubleSlashesForTableNames(string $tableName) : string
-    {
-        if(strpos('\\\\', $tableName)) {
-            $tableName = str_replace('\\\\', '\\', $tableName);
-        }
-
-        return $tableName;
-    }
 }
