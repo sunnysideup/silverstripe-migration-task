@@ -147,6 +147,10 @@ trait HelperMethods
         }
     }
 
+    /**
+     * delete the table both with and without slashes
+     * @param  string $tableName
+     */
     protected function dropTable(string $tableName)
     {
         $this->flushNow('Deleting ' . $tableName, 'deleted');
