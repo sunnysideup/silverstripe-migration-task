@@ -227,7 +227,7 @@ class CheckClassNames extends MigrateDataTaskBase
                             if (! $row[$fieldName]) {
                                 $row[$fieldName] = '--- NO VALUE ---';
                             }
-                            $this->flushNow('... Updating ' . $fieldName . ' to ' . $objectClassName . ' for ID = ' . $row['ID'] . ', ' . $fieldName . ' = ' . $row[$fieldName] . ' - based on inability to find matching IDs in any child class tables', 'created');
+                            $this->flushNow('... Updating ' . $fieldName . ' to ' . $objectClassName . ' for ID = ' . $row['ID'] . ' from ' . $fieldName . ' = ' . $row[$fieldName] . ' - based on inability to find matching IDs in any child class tables', 'created');
                             if ($this->forReal) {
                                 $this->runUpdateQuery(
                                     '
