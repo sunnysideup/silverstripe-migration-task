@@ -190,7 +190,7 @@ abstract class MigrateDataTaskBase extends BuildTask
             //update fields
             if (count($oldEntryIDs) > 0) {
                 //work out what option is shorter in terms of ID count:
-                $this->flushNow('working out update SQL..');
+                $this->flushNow('working out update SQL.');
                 $allIDs = $this->getListOfIDs($tableNew);
                 $allIDCount = count($allIDs);
                 $oldIDCount = count($oldEntryIDs);
