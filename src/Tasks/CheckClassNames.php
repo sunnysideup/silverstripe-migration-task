@@ -2,6 +2,7 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use DNADesign\Elemental\Models\ElementalArea;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
@@ -48,7 +49,7 @@ class CheckClassNames extends MigrateDataTaskBase
      * @var array
      */
     private static $other_fields_to_check = [
-        'ElementalArea' => [
+        ElementalArea::class => [
             'OwnerClassName',
         ],
     ];
@@ -117,7 +118,6 @@ class CheckClassNames extends MigrateDataTaskBase
                     }
                 } else {
                     $this->flushNow('... Can not find: ' . $tableName . ' in database.', 'error');
-                    $allOK = false;
                 }
             } else {
                 $this->flushNow('... No table needed');
