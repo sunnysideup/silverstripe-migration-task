@@ -2,7 +2,6 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
-use DNADesign\Elemental\Models\ElementalArea;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
@@ -49,7 +48,7 @@ class CheckClassNames extends MigrateDataTaskBase
      * @var array
      */
     private static $other_fields_to_check = [
-        ElementalArea::class => [
+        '\\DNADesign\\\Elemental\\Models\\ElementalArea' => [
             'OwnerClassName',
         ],
     ];
