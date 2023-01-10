@@ -84,7 +84,6 @@ trait HelperMethods
                         );
                         $publishItem->write();
                         if ($publishItem->hasMethod('publishRecursive')) {
-                            $publishItem->doPublish();
                             $publishItem->publishRecursive();
                             $this->flushNow('... DONE - PUBLISHED');
                         } else {
