@@ -142,7 +142,7 @@ class PublishAllFiles extends MigrateDataTaskBase
                 './',
                 '',
                 ASSETS_PATH . '/.protected/' . dirname($name)
-                    . '/' . substr($hash, 0, 10) . '/'
+                    . '/' . substr((string) $hash, 0, 10) . '/'
             );
 
             if (! file_exists($targetDir)) {

@@ -212,7 +212,7 @@ abstract class MigrateDataTaskBase extends BuildTask
                 if (count($fieldNamesNew) > 0) {
                     $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
                     $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
-                    if ('_versions' === substr($tableNew, -9)) {
+                    if ('_versions' === substr((string) $tableNew, -9)) {
                         $updateQuery .= ' AND "tablenew"."RecordID" = "tableold"."RecordID" ';
                         // also link to RecordID ...
                     }

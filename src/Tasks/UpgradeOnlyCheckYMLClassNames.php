@@ -71,7 +71,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                 $isProperty = false;
                 // $this->flushNow( '...';
                 //skip lines that are indented
-                if (' ' === substr($line, 0, 1)) {
+                if (' ' === substr((string) $line, 0, 1)) {
                     $isProperty = true;
                 }
 
