@@ -8,7 +8,6 @@ use SilverStripe\Versioned\Versioned;
 
 /**
  * Used to debug a QueueJob.
- *
  */
 class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
 {

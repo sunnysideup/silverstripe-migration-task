@@ -2,6 +2,8 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Page;
+use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
@@ -9,9 +11,6 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DataObjectSchema;
 use SilverStripe\ORM\DB;
 use SilverStripe\Versioned\Versioned;
-use Page;
-
-use SilverStripe\CMS\Model\SiteTree;
 
 class CheckClassNames extends MigrateDataTaskBase
 {
@@ -36,6 +35,8 @@ class CheckClassNames extends MigrateDataTaskBase
     protected $dataObjectSchema;
 
     protected $onlyRunFor = [];
+
+    protected $bestClassNameStore = [];
 
     /**
      * example:
@@ -152,11 +153,12 @@ class CheckClassNames extends MigrateDataTaskBase
                 }
             }
             if ($this->fixErrors) {
-                if($this->extendFieldSize) {
+                if ($this->extendFieldSize) {
                     $this->fixFieldSize($tableName);
                 }
                 //work out if we can set it to the long form of a short ClassName
-                $rows = DB::query('
+                $rows = DB::query(
+                    '
                     SELECT "' . $fieldName . '", COUNT("ID") AS C
                     FROM "' . $tableName . '"
                     GROUP BY "' . $fieldName . '"
@@ -281,20 +283,20 @@ class CheckClassNames extends MigrateDataTaskBase
     protected function fixFieldSize($tableName)
     {
         $databaseName = DB::get_conn()->getSelectedDatabase();
-        DB::query('ALTER TABLE "' . $databaseName . '"."'.$tableName.'" CHANGE ClassName ClassName VARCHAR(255);');
+        DB::query('ALTER TABLE "' . $databaseName . '"."' . $tableName . '" CHANGE ClassName ClassName VARCHAR(255);');
     }
 
-    protected $bestClassNameStore = [];
-
-    protected function bestClassName( string $objectClassName, string $tableName, string $fieldName) : string
+    protected function bestClassName(string $objectClassName, string $tableName, string $fieldName): string
     {
-        $keyForStore = $objectClassName.'_'.$tableName .'_'. $fieldName;
+        $keyForStore = $objectClassName . '_' . $tableName . '_' . $fieldName;
         if (! isset($this->bestClassNameStore[$keyForStore])) {
             $obj = Injector::inst()
-                ->get($objectClassName);
-            if($obj instanceof SiteTree) {
-                if(class_exists(Page::class)) {
+                ->get($objectClassName)
+            ;
+            if ($obj instanceof SiteTree) {
+                if (class_exists(Page::class)) {
                     $this->bestClassNameStore[$keyForStore] = 'Page';
+
                     return $this->bestClassNameStore[$keyForStore];
                 }
             }
@@ -322,6 +324,7 @@ class CheckClassNames extends MigrateDataTaskBase
             }
             $this->bestClassNameStore[$keyForStore] = $bestValue;
         }
+
         return $this->bestClassNameStore[$keyForStore];
     }
 }

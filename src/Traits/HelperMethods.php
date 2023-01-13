@@ -102,7 +102,7 @@ trait HelperMethods
     {
         $schema = $this->getSchema();
         if ($this->tableExists($tableName)) {
-            if (! $this->tableExists('_obsolete_' . $tableName)  || $doEvenIfAlreadyObsolete) {
+            if (! $this->tableExists('_obsolete_' . $tableName) || $doEvenIfAlreadyObsolete) {
                 $schema->dontRequireTable($tableName);
 
                 return true;
@@ -118,7 +118,8 @@ trait HelperMethods
     protected function tableExists(string $tableName): bool
     {
         $schema = $this->getSchema();
-        return ((bool) $schema->hasTable($tableName));
+
+        return (bool) $schema->hasTable($tableName);
     }
 
     protected function clearTable(string $tableName)
@@ -130,7 +131,7 @@ trait HelperMethods
     {
         if ($this->tableExists($a)) {
             if ($this->tableExists($b)) {
-                $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' .  stripslashes($b) . ';');
+                $itemsInDB = DB::query('SELECT DISTINCT ID FROM  ' . stripslashes($b) . ';');
                 if ($itemsInDB->numRecords() > 0 && $keepBackup) {
                     $this->makeTableObsolete($b, true);
                     $this->flushNow('Backing up ' . $b, 'deleted');
@@ -147,30 +148,31 @@ trait HelperMethods
     }
 
     /**
-     * delete the table both with and without slashes
-     * @param  string $tableName
+     * delete the table both with and without slashes.
      */
     protected function dropTable(string $tableName)
     {
         $this->flushNow('Deleting ' . $tableName, 'deleted');
-        DB::query('DROP TABLE IF EXISTS "' . $tableName. '";');
-        DB::query('DROP TABLE IF EXISTS "' . stripslashes($tableName). '";');
+        DB::query('DROP TABLE IF EXISTS "' . $tableName . '";');
+        DB::query('DROP TABLE IF EXISTS "' . stripslashes($tableName) . '";');
     }
 
     protected function renameTable(string $a, string $b)
     {
-        $this->flushNow('Moving "' . $a . '" to "' . $b.'"', 'warning');
-        if(!$this->tableExists($a)) {
+        $this->flushNow('Moving "' . $a . '" to "' . $b . '"', 'warning');
+        if (! $this->tableExists($a)) {
             $this->flushNow(' -- Could not find "' . $a . '", consider using replaceTable', 'deleted');
+
             return;
         }
-        if($this->tableExists($b)) {
+        if ($this->tableExists($b)) {
             $this->flushNow(' -- Destination table already exists "' . $b . '", consider using replaceTable', 'deleted');
+
             return;
         }
-        if(strpos($a, '\\') !== false || strpos($b, '\\') !== false) {
-            $this->flushNow('Special slashes case "' . $a . '" to "' . $b.'"', 'warning');
-            DB::query("ALTER TABLE \"".stripslashes($a)."\" RENAME \"".stripslashes($b)."\"");
+        if (false !== strpos($a, '\\') || false !== strpos($b, '\\')) {
+            $this->flushNow('Special slashes case "' . $a . '" to "' . $b . '"', 'warning');
+            DB::query('ALTER TABLE "' . stripslashes($a) . '" RENAME "' . stripslashes($b) . '"');
         } else {
             $this->getSchema()->renameTable($a, $b);
         }
@@ -257,5 +259,4 @@ trait HelperMethods
     {
         return $this->writeObject($obj, $row, $isPage = true);
     }
-
 }
