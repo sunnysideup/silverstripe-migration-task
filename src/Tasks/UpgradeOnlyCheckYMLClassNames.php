@@ -118,7 +118,7 @@ COULD NOT FIND ' . $className . '<br>');
                     if (strpos($line, '*')) {
                         continue;
                     }
-                    $line = str_replace(':', '', $line);
+                    $line = str_replace(':', '', (string) $line);
                     $line = trim($line);
                     if (isset($alreadySet[$line])) {
                         $this->flushNow('

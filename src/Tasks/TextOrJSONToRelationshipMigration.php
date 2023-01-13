@@ -198,7 +198,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
                     'error'
                 );
             }
-            $value = str_replace($char, '', $value);
+            $value = str_replace($char, '', (string) $value);
         }
 
         return $value;
