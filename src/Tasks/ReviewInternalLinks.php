@@ -50,7 +50,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         ';
         $ids = [];
         if ($request->getVar('ids')) {
-            $ids = explode(',', $request->getVar('ids'));
+            $ids = explode(',', (string) $request->getVar('ids'));
         }
         if ($request->getVar('type')) {
             $this->type = $request->getVar('type');
