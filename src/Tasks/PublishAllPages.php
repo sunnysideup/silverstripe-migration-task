@@ -13,6 +13,7 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\SecurityToken;
 use SilverStripe\Versioned\Versioned;
 use Sunnysideup\Flush\FlushNow;
+use Sunnysideup\Flush\FlushNowImplementor;
 
 /**
  * This code is stolen from somewhere, but unfortunately I am not sure exactly where.
@@ -54,12 +55,13 @@ class PublishAllPages extends BuildTask
             if (Director::is_cli() || SecurityToken::inst()->checkRequest($request)) {
                 $start = 0;
                 $pages = SiteTree::get()->limit($this->step, $start);
-                FlushNow::do_flush('<ol>');
+                FlushNowImplementor:
+                do_flush('<ol>');
                 $count = 0;
                 while ($pages->exists()) {
                     foreach ($pages as $page) {
                         $isPublished = $page->IsPublished();
-                        FlushNow::do_flush('publishing: ' . $page->Title, 'created');
+                        FlushNowImplementor::do_flush('publishing: ' . $page->Title, 'created');
                         $page->writeToStage(Versioned::DRAFT, true);
                         if ($isPublished) {
                             $page->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
@@ -72,8 +74,8 @@ class PublishAllPages extends BuildTask
                     $start += $this->step;
                     $pages = SiteTree::get()->limit($this->step, $start);
                 }
-                FlushNow::do_flush('</ol>');
-                FlushNow::do_flush('<h2>--- PUBLISHED ' . $count . ' Pages ---</h2>');
+                FlushNowImplementor::do_flush('</ol>');
+                FlushNowImplementor::do_flush('<h2>--- PUBLISHED ' . $count . ' Pages ---</h2>');
             } else {
                 Controller::curr()->httpError(400);
 
@@ -89,18 +91,18 @@ class PublishAllPages extends BuildTask
             $publishAllDescription = _t(
                 __CLASS__ . '.PUBALLFUN2',
                 'Pressing this button will do the equivalent of going to every page and pressing "publish".  '
-                . "It's intended to be used after there have been massive edits of the content, such as when "
-                . 'the site was first built.'
+                    . "It's intended to be used after there have been massive edits of the content, such as when "
+                    . 'the site was first built.'
             );
             $response .=
                 '<h1>' . _t(__CLASS__ . '.PUBALLFUN', 'Publish All functionality') . '</h1>
                 <p>' . $publishAllDescription . '</p>
                 <form method="get" action="">
                     <input type="submit" name="confirm" value="'
-                    . _t(__CLASS__ . '.PUBALLCONFIRM', 'Please publish every page in the site', 'Confirmation button') . '" />'
-                    . $tokenHtml .
+                . _t(__CLASS__ . '.PUBALLCONFIRM', 'Please publish every page in the site', 'Confirmation button') . '" />'
+                . $tokenHtml .
                 '</form>';
-            FlushNow::do_flush($response);
+            FlushNowImplementor::do_flush($response);
         }
     }
 }

@@ -8,6 +8,7 @@ use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Versioned\Versioned;
 use Sunnysideup\Flush\FlushNow;
+use Sunnysideup\Flush\FlushNowImplementor;
 
 trait HelperMethods
 {
@@ -16,7 +17,7 @@ trait HelperMethods
     public function deleteObject($obj)
     {
         if ($obj->exists()) {
-            FlushNow::do_flush('DELETING ' . $obj->ClassName . '.' . $obj->ID, 'deleted');
+            FlushNowImplementor::do_flush('DELETING ' . $obj->ClassName . '.' . $obj->ID, 'deleted');
             if ($obj->hasExtension(Versioned::class)) {
                 $obj->DeleteFromStage(Versioned::LIVE);
                 $obj->DeleteFromStage(Versioned::DRAFT);
@@ -25,7 +26,7 @@ trait HelperMethods
             }
             @$obj->flushCache();
         } else {
-            FlushNow::do_flush('DOES NOT EXIST', 'added');
+            FlushNowImplementor::do_flush('DOES NOT EXIST', 'added');
         }
     }
 
@@ -102,7 +103,7 @@ trait HelperMethods
     {
         $schema = $this->getSchema();
         if ($this->tableExists($tableName)) {
-            if (! $this->tableExists('_obsolete_' . $tableName) || $doEvenIfAlreadyObsolete) {
+            if (!$this->tableExists('_obsolete_' . $tableName) || $doEvenIfAlreadyObsolete) {
                 $schema->dontRequireTable($tableName);
 
                 return true;
@@ -139,7 +140,7 @@ trait HelperMethods
                 $this->dropTable($b);
             }
 
-            if (! $this->tableExists($b)) {
+            if (!$this->tableExists($b)) {
                 $this->renameTable($a, $b);
             } else {
                 $this->flushNow('Could not delete ' . $b, 'deleted');
@@ -160,7 +161,7 @@ trait HelperMethods
     protected function renameTable(string $a, string $b)
     {
         $this->flushNow('Moving "' . $a . '" to "' . $b . '"', 'warning');
-        if (! $this->tableExists($a)) {
+        if (!$this->tableExists($a)) {
             $this->flushNow(' -- Could not find "' . $a . '", consider using replaceTable', 'deleted');
 
             return;
@@ -181,7 +182,7 @@ trait HelperMethods
     protected function fieldExists(string $tableName, string $fieldName): bool
     {
         $key = $tableName . '_' . $fieldName;
-        if (! isset($this->_cacheFieldExists[$key])) {
+        if (!isset($this->_cacheFieldExists[$key])) {
             $schema = $this->getSchema();
             $fieldList = $schema->fieldList($tableName);
 
@@ -220,8 +221,7 @@ trait HelperMethods
     protected function getListOfIDs(string $tableName, ?array $leftJoin = [], ?string $where = '')
     {
         return $this->getListAsIterableQuery($tableName, $leftJoin = [], $where = '')
-            ->keyedColumn('ID')
-        ;
+            ->keyedColumn('ID');
     }
 
     protected function getListAsIterableQuery(string $tableName, ?array $leftJoin = [], ?string $where = '')
