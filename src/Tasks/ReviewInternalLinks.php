@@ -58,7 +58,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         $objects = DataList::create();
         if (count($ids)) {
             echo $tableHTML;
-            $objects = SiteTree::get()->sort('ID', 'ASC')->filter(['ID' => $ids]);
+            $objects = SiteTree::get()->sort(['ID' => 'ASC'])->filter(['ID' => $ids]);
             foreach ($objects as $object) {
                 $this->printFields($object);
             }
@@ -92,7 +92,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
             for ($i = 0; $i < $limit; $i += $this->step) {
                 $objects = null;
                 if ($isPage) {
-                    $objects = SiteTree::get()->sort('ID', 'ASC')->limit($this->step, $i + $start);
+                    $objects = SiteTree::get()->sort(['ID' => 'ASC'])->limit($this->step, $i + $start);
                 }
                 $filter = $this->Config()->get('filtered_class_names');
                 if (! empty($filter)) {
