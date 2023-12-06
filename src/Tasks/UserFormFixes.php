@@ -52,10 +52,11 @@ class UserFormFixes extends MigrateDataTaskBase
         $objects = UserDefinedForm::get();
         foreach ($objects as $object) {
             $this->flushNow('Publishing ' . $object->getTitle());
-            $isPublished = $object->IsPublished();
+            $isPublished = $object->IsPublished()  && !$object->isModifiedOnDraft();
+            ;
             $object->writeToStage(Versioned::DRAFT);
             $object->publishRecursive();
-            if (! $isPublished) {
+            if (!$isPublished) {
                 $object->doUnpublish();
             }
         }
