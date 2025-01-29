@@ -4,6 +4,7 @@ namespace Sunnysideup\MigrateData\Tasks;
 
 use Page;
 use SilverStripe\CMS\Model\SiteTree;
+use SilverStripe\CMS\Model\SiteTreeLink;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
@@ -51,6 +52,9 @@ class CheckClassNames extends MigrateDataTaskBase
     private static $other_fields_to_check = [
         '\\DNADesign\\\Elemental\\Models\\ElementalArea' => [
             'OwnerClassName',
+        ],
+        SiteTreeLink::class => [
+            'ParentClass',
         ],
     ];
 
