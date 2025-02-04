@@ -65,7 +65,6 @@ class CheckClassNames extends MigrateDataTaskBase
             $table = array_pop($row);
             $this->dbTablesPresent[$table] = $table;
         }
-
         // make a list of all classes
         // include baseclass = false
         $objectClassNames = ClassInfo::subclassesFor(DataObject::class, false);
@@ -89,7 +88,7 @@ class CheckClassNames extends MigrateDataTaskBase
                 $this->flushNow('Checking ' . $objectClassName . ' => ' . $tableName);
                 $this->flushNowLine();
                 $tableNameStaticValue = Config::inst()->get($objectClassName, 'table_name');
-                if ($tableNameStaticValue !== $tableName) {
+                if ($tableNameStaticValue !== $tableName && 'Page' !== $objectClassName) {
                     $this->flushNow('... ' . $objectClassName . ' POTENTIALLY has a table with a full class name: ' . $tableName . ' it is recommended that you set the private static table_name', 'error');
                     $allOK = false;
                 }
