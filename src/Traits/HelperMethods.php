@@ -181,15 +181,13 @@ trait HelperMethods
 
     protected function fieldExists(string $tableName, string $fieldName): bool
     {
-        $key = $tableName . '_' . $fieldName;
+        $key = $tableName;
         if (!isset($this->_cacheFieldExists[$key])) {
             $schema = $this->getSchema();
-            $fieldList = $schema->fieldList($tableName);
-
-            $this->_cacheFieldExists[$key] = isset($fieldList[$fieldName]);
+            $this->_cacheFieldExists[$key] = $schema->fieldList($tableName);
         }
 
-        return $this->_cacheFieldExists[$key];
+        return $this->_cacheFieldExists[$key][$fieldName] ?? false;
     }
 
     protected function renameField(string $table, string $oldFieldName, string $newFieldName)
