@@ -19,6 +19,8 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
 
     protected $enabled = true;
 
+    private static $segment = 'check-yml-class-names';
+
     private static $folders_to_ignore = [
         'public',
         'resources',
