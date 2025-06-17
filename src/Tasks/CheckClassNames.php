@@ -19,6 +19,8 @@ class CheckClassNames extends MigrateDataTaskBase
 
     protected $description = 'Check all tables for valid class names';
 
+    private static $segment = 'check-class-names';
+
     protected $enabled = true;
 
     protected $listOfAllClasses = [];
