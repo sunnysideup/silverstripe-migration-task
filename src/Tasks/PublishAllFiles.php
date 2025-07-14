@@ -98,17 +98,8 @@ class PublishAllFiles extends MigrateDataTaskBase
 
                     try {
                         if ($file->exists()) {
-                            FlushNowImplementor::do_flush('... Publishing: ' . $name . ', ID = ' . $file->ID);
-                            if ($this->generateThumbnails) {
-                                $this->admin->generateThumbnails($file);
-                            }
-                            $file->forceChange();
-                            $file->write();
-                            $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
-                            $test = DB::query('SELECT COUNT(ID) FROM File_Live WHERE ID = ' . $file->ID)->value();
-                            if (0 === (int) $test) {
-                                FlushNowImplementor::do_flush('... error finding: ' . $name, 'deleted');
-                            }
+
+                            $this->publishFile($file, $name);
                         } else {
                             FlushNowImplementor::do_flush('... Error in publishing V2 ...' . print_r($file->toMap(), 1), 'deleted');
                         }
@@ -116,7 +107,30 @@ class PublishAllFiles extends MigrateDataTaskBase
                         FlushNowImplementor::do_flush('... Error in publishing V1 ...' . print_r($file->toMap(), 1), 'deleted');
                     }
                 } else {
-                    FlushNowImplementor::do_flush('... Error in finding name for ' . print_r($file->toMap(), 1), 'deleted');
+                    $fix = false;
+                    foreach ([''] as $suffix) {
+                        $fileNameOld = DB::query('SELECT "Filename" FROM "File' . $suffix . '" WHERE ID = ' . $file->ID)->value();
+                        $fileNameNewTest = DB::query('SELECT "FileFilename" FROM "File' . $suffix . '" WHERE ID = ' . $file->ID)->value();
+                        if ($fileNameOld && !$fileNameNewTest) {
+                            $newFileName = str_replace(
+                                'assets/',
+                                '',
+                                $fileNameOld
+                            );
+                            DB::query(
+                                'UPDATE "File' . $suffix . '" SET "FileFilename" = \'' . $newFileName . '\' WHERE "ID" = \'' . $file->ID . '\' LIMIT 1;'
+                            );
+                            $fix = true;
+                        }
+                    }
+                    if ($fix) {
+                        FlushNowImplementor::do_flush(
+                            '... Fixed file name for ' . $file->ID . ' - run this task again to complete.',
+                            'created'
+                        );
+                    } else {
+                        FlushNowImplementor::do_flush('... Error in finding name for ' . print_r($file->toMap(), 1), 'deleted');
+                    }
                 }
 
                 $file->destroy();
@@ -186,6 +200,21 @@ class PublishAllFiles extends MigrateDataTaskBase
                     $this->compareCount($parentID);
                 }
             }
+        }
+    }
+
+    protected function publishFile($file, $name)
+    {
+        FlushNowImplementor::do_flush('... Publishing: ' . $name . ', ID = ' . $file->ID);
+        if ($this->generateThumbnails) {
+            $this->admin->generateThumbnails($file);
+        }
+        $file->forceChange();
+        $file->write();
+        $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+        $test = DB::query('SELECT COUNT(ID) FROM File_Live WHERE ID = ' . $file->ID)->value();
+        if (0 === (int) $test) {
+            FlushNowImplementor::do_flush('... error finding: ' . $name, 'deleted');
         }
     }
 }
