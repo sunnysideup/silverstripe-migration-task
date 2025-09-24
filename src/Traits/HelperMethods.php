@@ -181,13 +181,15 @@ trait HelperMethods
 
     protected function fieldExists(string $tableName, string $fieldName): bool
     {
-        $key = $tableName;
-        if (!isset($this->_cacheFieldExists[$key])) {
-            $schema = $this->getSchema();
-            $this->_cacheFieldExists[$key] = $schema->fieldList($tableName);
-        }
-
-        return $this->_cacheFieldExists[$key][$fieldName] ?? false;
+        $sql = <<<'SQL'
+                    SELECT 1
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE()
+                    AND TABLE_NAME = ?
+                    AND COLUMN_NAME = ?
+                    LIMIT 1
+SQL;
+        return (bool) DB::prepared_query($sql, [$tableName, $fieldName])->value();
     }
 
     protected function renameField(string $table, string $oldFieldName, string $newFieldName)
