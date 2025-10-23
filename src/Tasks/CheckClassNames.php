@@ -12,6 +12,7 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DataObjectSchema;
 use SilverStripe\ORM\DB;
 use SilverStripe\Versioned\Versioned;
+use SilverStripe\ORM\Connect\ConnectionInterface;
 
 class CheckClassNames extends MigrateDataTaskBase
 {
@@ -62,15 +63,16 @@ class CheckClassNames extends MigrateDataTaskBase
 
     protected function performMigration()
     {
-        $this->dataObjectSchema = Injector::inst()->get(DataObjectSchema::class);
-
-        //get tables in DB
         $this->dbTablesPresent = [];
         $rows = DB::query('SHOW tables');
         foreach ($rows as $row) {
             $table = array_pop($row);
             $this->dbTablesPresent[$table] = $table;
         }
+
+        $this->dataObjectSchema = Injector::inst()->get(DataObjectSchema::class);
+
+        //get tables in DB
         // make a list of all classes
         // include baseclass = false
         $objectClassNames = ClassInfo::subclassesFor(DataObject::class, false);
@@ -133,6 +135,7 @@ class CheckClassNames extends MigrateDataTaskBase
                 $this->flushNow('... ERRORS', 'error');
             }
         }
+        $this->findSuspiciousClassNames();
     }
 
     protected function fixClassNames(string $tableName, string $objectClassName, ?string $fieldName = 'ClassName', ?bool $versionedTable = false)
@@ -296,8 +299,7 @@ class CheckClassNames extends MigrateDataTaskBase
         $keyForStore = $objectClassName . '_' . $tableName . '_' . $fieldName;
         if (! isset($this->bestClassNameStore[$keyForStore])) {
             $obj = Injector::inst()
-                ->get($objectClassName)
-            ;
+                ->get($objectClassName);
             if ($obj instanceof SiteTree) {
                 if (class_exists(Page::class)) {
                     $this->bestClassNameStore[$keyForStore] = 'Page';
@@ -307,8 +309,7 @@ class CheckClassNames extends MigrateDataTaskBase
             }
             $values = $obj
                 ->dbObject($fieldName)
-                ->enumValues(false)
-            ;
+                ->enumValues(false);
             $sql = '
                 SELECT ' . $fieldName . ', COUNT(*) AS magnitude
                 FROM ' . $tableName . '
@@ -331,5 +332,67 @@ class CheckClassNames extends MigrateDataTaskBase
         }
 
         return $this->bestClassNameStore[$keyForStore];
+    }
+
+
+    protected function findSuspiciousClassNames()
+    {
+
+        $results = [];
+        foreach ($this->dbTablesPresent as $tableName) {
+            // get fields
+            $fields = DB::query('SHOW COLUMNS FROM "' . $tableName . '"');
+
+            foreach ($fields as $fieldDetails) {
+                $fieldName = $fieldDetails['Field'];
+                // check for classnames
+                $sql =
+                    'SELECT ID as UUIDTMPRANDOM,"' . $fieldName . '"
+                    FROM "' . $tableName . '"
+                    WHERE "' . $fieldName . '" REGEXP \'^[A-Z][A-Za-z0-9_]*(\\\\\\\\[A-Z][A-Za-z0-9_]*)+$\';';
+                $rows = DB::query($sql);
+
+                if (! empty($rows)) {
+                    foreach ($rows as $row) {
+                        $className = $row[$fieldName] ?? 'ERROR_NO_CLASSNAME_FIELD';
+                        if (! class_exists($className)) {
+                            $id = $row['UUIDTMPRANDOM'] ?? 'ERROR_NO_ID';
+                            $betterClassName = $this->findMatchingClassname($className);
+                            if ($betterClassName) {
+                                echo 'ERROR: Updating ' . $tableName . ' / ' . $fieldName . ' / ID: ' . $id . ' from ' . $className . ' to ' . $betterClassName . PHP_EOL;
+                                $sql = 'UPDATE "' . $tableName . '"
+                                    SET "' . $fieldName . '" = \'' . addslashes($betterClassName) . '\'
+                                    WHERE ID = ' . $id;
+                                DB::query($sql);
+                            }
+                            $results[] = [
+                                'Table' => $tableName,
+                                'Field' => $fieldName,
+                                'ID' => $id,
+                                'ClassName' => $className,
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+        echo '<h12>Suspicious Class Names</h2>';
+        echo '<pre>';
+        print_r($results);
+        echo '</pre>';
+    }
+
+    protected function findMatchingClassname(string $className): ?string
+    {
+        $shortName = substr(strrchr($className, '\\') ?: $className, 1);
+        $matches = [];
+
+        foreach ($this->listOfAllClasses as $fqcn => $fqcnShort) {
+            if ($shortName === $fqcnShort) {
+                $matches[] = $fqcn;
+            }
+        }
+
+        return count($matches) === 1 ? $matches[0] : null;
     }
 }
