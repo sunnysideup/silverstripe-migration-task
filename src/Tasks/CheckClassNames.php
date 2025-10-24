@@ -361,7 +361,7 @@ class CheckClassNames extends MigrateDataTaskBase
                             if ($betterClassName) {
                                 echo 'ERROR: Updating ' . $tableName . ' / ' . $fieldName . ' / ID: ' . $id . ' from ' . $className . ' to ' . $betterClassName . PHP_EOL;
                                 $sql = 'UPDATE "' . $tableName . '"
-                                    SET "' . $fieldName . '" = \'' . addslashes($betterClassName) . '\'
+                                    SET "' . $fieldName . '" = \'' . $betterClassName . '\'
                                     WHERE ID = ' . $id;
                                 DB::query($sql);
                             }
