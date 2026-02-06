@@ -179,8 +179,7 @@ class PublishAllFiles extends MigrateDataTaskBase
     protected function compareCount($parentID = null)
     {
         $where = '';
-        if (null === $parentID) {
-        } else {
+        if (null !== $parentID) {
             $where = ' WHERE ParentID = ' . $parentID;
         }
         $count1 = DB::query('SELECT COUNT("ID") FROM "File" ' . $where)->value();

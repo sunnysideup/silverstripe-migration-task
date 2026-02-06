@@ -122,7 +122,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
             //adding empty string ...
             $fieldValue = $this->sanitiseChars($fieldValue . '');
             if ('' !== $fieldValue) {
-                $fieldValue = json_encode(explode(',', (string) $fieldValue));
+                $fieldValue = json_encode(explode(',', $fieldValue));
                 $sql = '
                     UPDATE ' . $tableName . ' SET ' . $column . " = '" . $fieldValue . '\'
                     WHERE ' . $tableName . '."ID" = ' . $id . ';';

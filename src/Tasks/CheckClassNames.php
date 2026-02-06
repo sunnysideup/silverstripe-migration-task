@@ -178,20 +178,18 @@ class CheckClassNames extends MigrateDataTaskBase
                         $row[$fieldName] = '--- NO VALUE ---';
                     }
                     $this->flushNow('... ... ' . $row['C'] . ' ' . $row[$fieldName]);
-                    if (isset($this->countsOfAllClasses[$row[$fieldName]])) {
-                        if (1 === $this->countsOfAllClasses[$row[$fieldName]]) {
-                            $longNameAlreadySlashed = array_search($row[$fieldName], $this->listOfAllClasses, true);
-                            if ($longNameAlreadySlashed) {
-                                $this->flushNow('... ... ... Updating ' . $row[$fieldName] . ' to ' . $longNameAlreadySlashed . ' - based in short to long mapping of the ' . $fieldName . ' field. ', 'created');
-                                if ($this->forReal) {
-                                    $this->runUpdateQuery(
-                                        '
+                    if (isset($this->countsOfAllClasses[$row[$fieldName]]) && 1 === $this->countsOfAllClasses[$row[$fieldName]]) {
+                        $longNameAlreadySlashed = array_search($row[$fieldName], $this->listOfAllClasses, true);
+                        if ($longNameAlreadySlashed) {
+                            $this->flushNow('... ... ... Updating ' . $row[$fieldName] . ' to ' . $longNameAlreadySlashed . ' - based in short to long mapping of the ' . $fieldName . ' field. ', 'created');
+                            if ($this->forReal) {
+                                $this->runUpdateQuery(
+                                    '
                                         UPDATE "' . $tableName . '"
                                         SET "' . $tableName . '"."' . $fieldName . '" = \'' . $longNameAlreadySlashed . '\'
                                         WHERE "' . $fieldName . '" = \'' . $row[$fieldName] . "'",
-                                        2
-                                    );
-                                }
+                                    2
+                                );
                             }
                         }
                     }
@@ -300,12 +298,9 @@ class CheckClassNames extends MigrateDataTaskBase
         if (! isset($this->bestClassNameStore[$keyForStore])) {
             $obj = Injector::inst()
                 ->get($objectClassName);
-            if ($obj instanceof SiteTree) {
-                if (class_exists(Page::class)) {
-                    $this->bestClassNameStore[$keyForStore] = 'Page';
-
-                    return $this->bestClassNameStore[$keyForStore];
-                }
+            if ($obj instanceof SiteTree && class_exists(Page::class)) {
+                $this->bestClassNameStore[$keyForStore] = 'Page';
+                return $this->bestClassNameStore[$keyForStore];
             }
             $values = $obj
                 ->dbObject($fieldName)

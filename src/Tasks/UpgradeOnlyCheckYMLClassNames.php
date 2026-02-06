@@ -73,7 +73,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                 $isProperty = false;
                 // $this->flushNow( '...';
                 //skip lines that are indented
-                if (' ' === substr((string) $line, 0, 1)) {
+                if (' ' === substr($line, 0, 1)) {
                     $isProperty = true;
                 }
 
@@ -83,8 +83,6 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                         if (strpos($line, ':')) {
                             $myItems = explode(':', $line);
                             if (2 === count($myItems) && $myItems[0] && $myItems[1]) {
-                                $property = trim($myItems[0]);
-                                $property = trim($myItems[0], "'");
                                 $property = trim($myItems[0], '"');
                                 if (strpos($property, '\\')) {
                                     if (! class_exists($property)) {
@@ -120,7 +118,7 @@ COULD NOT FIND ' . $className . '<br>');
                     if (strpos($line, '*')) {
                         continue;
                     }
-                    $line = str_replace(':', '', (string) $line);
+                    $line = str_replace(':', '', $line);
                     $line = trim($line);
                     if (isset($alreadySet[$line])) {
                         $this->flushNow('

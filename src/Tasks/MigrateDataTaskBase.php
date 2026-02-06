@@ -177,11 +177,9 @@ abstract class MigrateDataTaskBase extends BuildTask
 
             //add a new line using the ID as identifier
             foreach ($oldEntries as $oldEntry) {
-                if ($includeInserts) {
-                    if (! in_array($oldEntry['ID'], $newEntryIDs, true)) {
-                        $this->flushNow('Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.');
-                        $this->runUpdateQuery('INSERT INTO "' . $tableNew . '" ("ID") VALUES (' . $oldEntry['ID'] . ');');
-                    }
+                if ($includeInserts && ! in_array($oldEntry['ID'], $newEntryIDs, true)) {
+                    $this->flushNow('Added row ' . $oldEntry['ID'] . ' to ' . $tableNew . '.');
+                    $this->runUpdateQuery('INSERT INTO "' . $tableNew . '" ("ID") VALUES (' . $oldEntry['ID'] . ');');
                 }
 
                 $oldEntryIDs[] = $oldEntry['ID'];
@@ -212,7 +210,7 @@ abstract class MigrateDataTaskBase extends BuildTask
                 if (count($fieldNamesNew) > 0) {
                     $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
                     $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
-                    if ('_versions' === substr((string) $tableNew, -9)) {
+                    if ('_versions' === substr($tableNew, -9)) {
                         $updateQuery .= ' AND "tablenew"."RecordID" = "tableold"."RecordID" ';
                         // also link to RecordID ...
                     }

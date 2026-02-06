@@ -53,7 +53,7 @@ class ImportSql extends BuildTask
             // Loop through each line
             foreach ($lines as $line) {
                 // Skip it if it's a comment
-                if ('--' === substr((string) $line, 0, 2) || '' === $line) {
+                if ('--' === substr($line, 0, 2) || '' === $line) {
                     continue;
                 }
 

@@ -49,14 +49,14 @@ class FixMissingFiles extends BuildTask
             if ($healthyRow) {
                 echo 'Fixing' . $healthyRow['Name'];
                 $this->runUpdateQuery(
-                    'UPDATE "' . 'File' . '"
+                    'UPDATE "File' . '"
                     SET "' . 'File' . '"."' . 'FileHash' . '" = \'' . $healthyRow['FileHash'] . '\'
                     WHERE ID = ' . $row['ID'],
                     2
                 );
 
                 $this->runUpdateQuery(
-                    'UPDATE "' . 'File' . '"
+                    'UPDATE "File' . '"
                     SET "' . 'File' . '"."' . 'FileFilename' . '" = \'' . $healthyRow['FileFilename'] . '\'
                     WHERE ID = ' . $row['ID'],
                     2
