@@ -9,7 +9,6 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DB;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Versioned\Versioned;
-use Sunnysideup\Flush\FlushNow;
 use Sunnysideup\Flush\FlushNowImplementor;
 
 class PublishAllFiles extends MigrateDataTaskBase
@@ -83,7 +82,7 @@ class PublishAllFiles extends MigrateDataTaskBase
             $file = File::get_by_id($row['ID']);
             if (null !== $file) {
                 $name = $file->getFilename();
-                if (!$name) {
+                if (! $name) {
                     $file->write();
                     $name = $file->getFilename();
                 }
@@ -111,7 +110,7 @@ class PublishAllFiles extends MigrateDataTaskBase
                     foreach ([''] as $suffix) {
                         $fileNameOld = DB::query('SELECT "Filename" FROM "File' . $suffix . '" WHERE ID = ' . $file->ID)->value();
                         $fileNameNewTest = DB::query('SELECT "FileFilename" FROM "File' . $suffix . '" WHERE ID = ' . $file->ID)->value();
-                        if ($fileNameOld && !$fileNameNewTest) {
+                        if ($fileNameOld && ! $fileNameNewTest) {
                             $newFileName = str_replace(
                                 'assets/',
                                 '',
@@ -145,8 +144,8 @@ class PublishAllFiles extends MigrateDataTaskBase
     protected function updateLocationForOneFile($file, $name)
     {
         $originalDir = ASSETS_PATH . '/';
-        if (file_exists($originalDir . $name) && !is_dir($originalDir . $name)) {
-            if (!$file->getField('FileHash')) {
+        if (file_exists($originalDir . $name) && ! is_dir($originalDir . $name)) {
+            if (! $file->getField('FileHash')) {
                 $hash = sha1_file($originalDir . $name);
                 $this->runUpdateQuery('UPDATE "File" SET "FileHash" = \'' . $hash . '\' WHERE "ID" = \'' . $file->ID . "' LIMIT 1;");
             } else {
@@ -160,7 +159,7 @@ class PublishAllFiles extends MigrateDataTaskBase
                     . '/' . substr((string) $hash, 0, 10) . '/'
             );
 
-            if (!file_exists($targetDir)) {
+            if (! file_exists($targetDir)) {
                 mkdir($targetDir, 0755, true);
             }
 

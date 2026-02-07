@@ -12,7 +12,6 @@ use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\SecurityToken;
 use SilverStripe\Versioned\Versioned;
-use Sunnysideup\Flush\FlushNow;
 use Sunnysideup\Flush\FlushNowImplementor;
 
 /**
@@ -60,7 +59,7 @@ class PublishAllPages extends BuildTask
                 $count = 0;
                 while ($pages->exists()) {
                     foreach ($pages as $page) {
-                        $isPublished = $page->IsPublished() && !$page->isModifiedOnDraft();
+                        $isPublished = $page->IsPublished() && ! $page->isModifiedOnDraft();
                         FlushNowImplementor::do_flush('publishing: ' . $page->Title, 'created');
                         $page->writeToStage(Versioned::DRAFT, true);
                         if ($isPublished) {

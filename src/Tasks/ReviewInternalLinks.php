@@ -108,7 +108,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         foreach ($this->allLinks as $url => $details) {
             $linksAll[] = $url . ' | ' . $details['count'];
         }
-        echo  '
+        echo '
                     <tr>
                         <th>---</th>
                         <th>---</th>
@@ -127,7 +127,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         foreach ($this->replacements as $details) {
             $replacementsAll[] = 'FR: ' . $details['from'] . '<br />TO: ' . $details['to'] . '<br />RS: ' . $details['result'] . '<br /><br />';
         }
-        echo  '
+        echo '
                     <tr>
                         <th>---</th>
                         <th>---</th>
@@ -201,8 +201,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 }
             }
         }
-        echo
-        '<tr>
+        echo '<tr>
             <td>' . $this->count . '</td>
             <td>
                 <h6><a href="' . $object->CMSEditLink() . '">CMS</></h6>

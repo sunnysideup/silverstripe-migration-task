@@ -12,7 +12,6 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DataObjectSchema;
 use SilverStripe\ORM\DB;
 use SilverStripe\Versioned\Versioned;
-use SilverStripe\ORM\Connect\ConnectionInterface;
 
 class CheckClassNames extends MigrateDataTaskBase
 {
@@ -328,7 +327,6 @@ class CheckClassNames extends MigrateDataTaskBase
 
         return $this->bestClassNameStore[$keyForStore];
     }
-
 
     protected function findSuspiciousClassNames()
     {

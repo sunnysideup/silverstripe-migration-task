@@ -103,7 +103,7 @@ trait HelperMethods
     {
         $schema = $this->getSchema();
         if ($this->tableExists($tableName)) {
-            if (!$this->tableExists('_obsolete_' . $tableName) || $doEvenIfAlreadyObsolete) {
+            if (! $this->tableExists('_obsolete_' . $tableName) || $doEvenIfAlreadyObsolete) {
                 $schema->dontRequireTable($tableName);
 
                 return true;
@@ -140,7 +140,7 @@ trait HelperMethods
                 $this->dropTable($b);
             }
 
-            if (!$this->tableExists($b)) {
+            if (! $this->tableExists($b)) {
                 $this->renameTable($a, $b);
             } else {
                 $this->flushNow('Could not delete ' . $b, 'deleted');
@@ -161,7 +161,7 @@ trait HelperMethods
     protected function renameTable(string $a, string $b)
     {
         $this->flushNow('Moving "' . $a . '" to "' . $b . '"', 'warning');
-        if (!$this->tableExists($a)) {
+        if (! $this->tableExists($a)) {
             $this->flushNow(' -- Could not find "' . $a . '", consider using replaceTable', 'deleted');
 
             return;

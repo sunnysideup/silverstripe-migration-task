@@ -5,7 +5,6 @@ namespace Sunnysideup\MigrateData\Tasks;
 use SilverStripe\Control\Director;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
-use Sunnysideup\Flush\FlushNow;
 use Sunnysideup\Flush\FlushNowImplementor;
 
 class ImportSql extends BuildTask
@@ -43,7 +42,7 @@ class ImportSql extends BuildTask
             // Temporary variable, used to store current query
             $templine = '';
 
-            if (!file($fileName)) {
+            if (! file($fileName)) {
                 die('File not found: ' . $fileName);
             }
             // Read in entire file

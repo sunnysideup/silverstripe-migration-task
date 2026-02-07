@@ -4,7 +4,6 @@ namespace Sunnysideup\MigrateData\Tasks;
 
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
-use Sunnysideup\Flush\FlushNow;
 use Sunnysideup\Flush\FlushNowImplementor;
 
 /**
