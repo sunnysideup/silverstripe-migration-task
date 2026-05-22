@@ -79,8 +79,8 @@ class CheckClassNames extends MigrateDataTaskBase
 
         $objectClassNames = ClassInfo::subclassesFor(DataObject::class, false);
         foreach ($objectClassNames as $objectClassName) {
-            $slashed = addslashes($objectClassName);
-            $this->listOfAllClasses[$slashed] = ClassInfo::shortName($objectClassName);
+            // Pure class names to prevent double slashes in output
+            $this->listOfAllClasses[$objectClassName] = ClassInfo::shortName($objectClassName);
         }
         $this->countsOfAllClasses = array_count_values($this->listOfAllClasses);
 
@@ -124,12 +124,18 @@ class CheckClassNames extends MigrateDataTaskBase
     {
         $this->processedFields[$tableName . '.' . $fieldName] = true;
 
-        $where = '"' . $fieldName . '" NOT IN (\'' . implode("', '", array_keys($this->listOfAllClasses)) . "')";
+        $slashedClasses = array_map('addslashes', array_keys($this->listOfAllClasses));
+        $where = '"' . $fieldName . '" NOT IN (\'' . implode("', '", $slashedClasses) . "')";
+
         $rowsToFix = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $where)->value();
 
         if ($rowsToFix > 0) {
 
-            // 1. GENERATE THE CLEAN GROUPED OUTPUT
+            if ($this->forReal && $this->extendFieldSize) {
+                $this->fixFieldSize($tableName);
+            }
+
+            // Get grouped counts of bad values
             $sql = "SELECT \"{$fieldName}\" AS BadName, COUNT(\"ID\") AS C
                     FROM \"{$tableName}\"
                     WHERE {$where}
@@ -144,83 +150,61 @@ class CheckClassNames extends MigrateDataTaskBase
                 $badName = $row['BadName'] ?: '--- NO VALUE ---';
                 $count = $row['C'];
                 $suggested = null;
+                $mappedByString = false;
 
-                // Guess for reporting purposes
                 if ($badName !== '--- NO VALUE ---') {
-                    $longNameAlreadySlashed = array_search($badName, $this->listOfAllClasses, true);
-                    if ($longNameAlreadySlashed && isset($this->countsOfAllClasses[$badName]) && 1 === $this->countsOfAllClasses[$badName]) {
-                        $suggested = $longNameAlreadySlashed;
+                    $longName = array_search($badName, $this->listOfAllClasses, true);
+                    if ($longName && isset($this->countsOfAllClasses[$badName]) && 1 === $this->countsOfAllClasses[$badName]) {
+                        $suggested = $longName;
+                        $mappedByString = true;
                     } elseif ($match = $this->findMatchingClassname($badName)) {
                         $suggested = $match;
+                        $mappedByString = true;
                     }
                 }
 
+                // UI Display
                 $display = $suggested ?: '[NO MATCH]';
                 $this->flushNow("------X {$count} {$badName} => {$display}");
 
                 if (!$suggested && $badName !== '--- NO VALUE ---') {
                     $this->unfindableClassNames[$badName] = true;
                 }
-            }
 
-            // 2. EXECUTE YOUR ORIGINAL ROBUST FIXING LOGIC IN THE BACKGROUND
-            if ($this->forReal) {
-                if ($this->extendFieldSize) {
-                    $this->fixFieldSize($tableName);
-                }
-
-                // Phase A: Bulk mapping for Short to Long ClassNames
-                $groupRows = DB::query('SELECT "' . $fieldName . '", COUNT("ID") AS C FROM "' . $tableName . '" GROUP BY "' . $fieldName . '" HAVING ' . $where . ' ORDER BY C DESC');
-                foreach ($groupRows as $row) {
-                    if ($row[$fieldName] && isset($this->countsOfAllClasses[$row[$fieldName]]) && 1 === $this->countsOfAllClasses[$row[$fieldName]]) {
-                        $longNameAlreadySlashed = array_search($row[$fieldName], $this->listOfAllClasses, true);
-                        if ($longNameAlreadySlashed) {
-                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $tableName . '"."' . $fieldName . '" = \'' . $longNameAlreadySlashed . '\' WHERE "' . $fieldName . '" = \'' . $row[$fieldName] . "'", 2);
-                        }
-                    }
-                }
-
-                // Phase B: Row-by-Row Child Table Inference
-                if ('ClassName' === $fieldName) {
-                    $options = ClassInfo::subclassesFor($objectClassName);
-                    $checkTables = [];
-                    foreach ($options as $key => $optionClassName) {
-                        if ($optionClassName !== $objectClassName) {
-                            $optionTableName = $this->dataObjectSchema->tableName($objectClassName);
-                            if (!$this->tableExists($optionTableName) || $optionTableName === $tableName) {
-                                unset($options[$key]);
-                            } else {
-                                $checkTables[$optionClassName] = $optionTableName;
-                            }
-                        }
-                    }
-
-                    $rows = DB::query('SELECT "ID", "' . $fieldName . '" FROM "' . $tableName . '" WHERE ' . $where);
-                    foreach ($rows as $row) {
-                        $optionCount = 0;
-                        $matchedClassName = '';
-                        foreach ($checkTables as $optionClassName => $optionTableName) {
-                            $hasMatch = DB::query('SELECT COUNT("' . $tableName . '"."ID") FROM "' . $tableName . '" INNER JOIN "' . $optionTableName . '" ON "' . $optionTableName . '"."ID" = "' . $tableName . '"."ID" WHERE "' . $tableName . '"."ID" = ' . $row['ID'])->value();
-                            if (1 === $hasMatch) {
-                                ++$optionCount;
-                                $matchedClassName = $optionClassName;
-                                if ($optionCount > 1) {
-                                    break;
+                // Bulk Updates
+                if ($this->forReal) {
+                    if ($badName === '--- NO VALUE ---') {
+                        // Fix NULLs / empty strings
+                        $bestValue = ('ClassName' === $fieldName) ? $this->bestClassName($objectClassName, $tableName, $fieldName) : '';
+                        $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($bestValue) . '\' WHERE "' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\'', 2);
+                    } else {
+                        if ($mappedByString && $suggested) {
+                            // 1. We know the match via string. Bulk update!
+                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($suggested) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . '\'', 2);
+                        } elseif ('ClassName' === $fieldName) {
+                            // 2. Unfindable by string. Let's use bulk child-table IN() checks!
+                            $options = ClassInfo::subclassesFor($objectClassName);
+                            foreach ($options as $optionClassName) {
+                                if ($optionClassName === $objectClassName) {
+                                    continue;
+                                }
+                                $optionTableName = $this->dataObjectSchema->tableName($optionClassName);
+                                if ($this->tableExists($optionTableName) && $optionTableName !== $tableName) {
+                                    // Set the ClassName only for rows that ALSO exist in the specific child table
+                                    $this->runUpdateQuery(
+                                        'UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($optionClassName) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . '\' AND "ID" IN (SELECT "ID" FROM "' . $optionTableName . '")',
+                                        2
+                                    );
                                 }
                             }
-                        }
-
-                        if (0 === $optionCount) {
-                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $tableName . '"."' . $fieldName . '" = \'' . addslashes($objectClassName) . '\' WHERE ID = ' . $row['ID'], 2);
-                        } elseif (1 === $optionCount && $matchedClassName) {
-                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $tableName . '"."' . $fieldName . '" = \'' . addslashes($matchedClassName) . '\' WHERE ID = ' . $row['ID'], 2);
-                        } else {
+                            // 3. Fallback for any rows holding this badName that didn't exist in any child tables
                             $bestValue = $this->bestClassName($objectClassName, $tableName, $fieldName);
-                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $tableName . '"."' . $fieldName . '" = \'' . addslashes($bestValue) . '\' WHERE ID = ' . $row['ID'], 2);
+                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($bestValue) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . '\'', 2);
+                        } else {
+                            // Not a classname field, clear the bad value
+                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . '\'', 2);
                         }
                     }
-                } else {
-                    $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'\' WHERE ' . $where, 2);
                 }
             }
         }
@@ -276,6 +260,7 @@ class CheckClassNames extends MigrateDataTaskBase
                         }
 
                         if ($this->forReal && $suggested) {
+                            // Already bulk updates!
                             DB::query('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($suggested) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . '\'');
                         }
                     }
