@@ -14,71 +14,46 @@ use SilverStripe\ORM\DB;
 
 /**
  * Scan every DataObject table for invalid ClassName (and similar) values and
- * repair them.
+ * repair them in bulk.
  *
- * Resolution strategies, in order of confidence:
- *   1. Bulk fix by distinct broken value: if the short class name of the broken
- *      value uniquely identifies a known class — either by short-name match or
- *      by table-name match — every row with that value is updated in one
- *      statement.
- *   2. Per-row fix for whatever bulk could not resolve: try the same short-name
- *      lookup again, then a child-table existence check (only meaningful where
- *      the join on ID makes sense — i.e. NOT on _Versions tables), then fall
- *      back to bestClassName() (e.g. SiteTree → 'Page').
+ * Resolution strategy (Value-Based Bulk Update):
+ * 1. Find all distinct invalid values in a column.
+ * 2. For each invalid value, attempt a short-name or table-name match.
+ * 3. If unresolved, fall back to bestClassName() for the table.
+ * 4. Issue a single parameterized UPDATE query replacing the old value with the new one.
  *
  * Run modes:
- *   - $dryRun = true  : compute and log every proposed fix, do not touch the DB.
- *   - $dryRun = false : compute, log, and execute. (default — matches the
- *                       previous behaviour of $forReal = true & $fixErrors = true.)
+ * - $dryRun = true  : compute and log every proposed fix, do not touch the DB.
+ * - $dryRun = false : compute, log, and execute.
  */
 class CheckClassNames extends MigrateDataTaskBase
 {
-    protected $title = 'Check all tables for valid class names';
+    protected $title = 'Check all tables for valid class names (Bulk Update)';
 
-    protected $description = 'Check all tables for valid class names';
+    protected $description = 'Check all tables for valid class names and resolve errors via bulk value-to-value updates.';
 
     private static $segment = 'check-class-names';
 
     protected $enabled = true;
 
-    /**
-     * When true, log every proposed change but do not write to the database.
-     * When false, write changes for real.
-     */
-    protected $dryRun = true;
+    protected $dryRun = false;
 
-    /**
-     * Extend ClassName columns to VARCHAR(255) before writing fixes.
-     * Long FQCNs don't fit in some older schemas. Subject to $dryRun.
-     */
     protected $extendFieldSize = true;
 
-    /** Restrict the check to these classes (empty = all DataObject subclasses). */
     protected $onlyRunFor = [];
 
-    /** Populated in performMigration(). Keys are addslashes()'d FQCNs. */
     protected $listOfAllClasses = [];
 
-    /** Short-name → frequency map, derived from $listOfAllClasses. */
     protected $countsOfAllClasses = [];
 
-    /** Set of every table currently in the database. */
     protected $dbTablesPresent = [];
 
-    /** Cached service handle. */
     protected $dataObjectSchema;
 
-    /** Memoised bestClassName() results, keyed by class+table+field. */
     protected $bestClassNameStore = [];
 
-    /** Lazy table_name → [slashed FQCN, …] reverse lookup. */
     protected $tableNameToClassMap;
 
-    /**
-     * Extra non-ClassName fields that should also be checked, per owner class.
-     *
-     *   [ OwnerClass::class => ['SomeClassFieldA', 'SomeClassFieldB'] ]
-     */
     private static $other_fields_to_check = [
         'DNADesign\\Elemental\\Models\\ElementalArea' => [
             'OwnerClassName',
@@ -96,10 +71,9 @@ class CheckClassNames extends MigrateDataTaskBase
 
         $this->dataObjectSchema = Injector::inst()->get(DataObjectSchema::class);
 
-        $objectClassNames = array_keys($this->listOfAllClasses); // slashed
-        foreach ($objectClassNames as $slashed) {
-            $objectClassName = stripslashes($slashed);
-            if (count($this->onlyRunFor) && ! in_array($objectClassName, $this->onlyRunFor, true)) {
+        $objectClassNames = array_keys($this->listOfAllClasses);
+        foreach ($objectClassNames as $objectClassName) {
+            if (count($this->onlyRunFor) && !in_array($objectClassName, $this->onlyRunFor, true)) {
                 continue;
             }
             $this->processClass($objectClassName);
@@ -108,7 +82,7 @@ class CheckClassNames extends MigrateDataTaskBase
     }
 
     // ----------------------------------------------------------------
-    //                          Setup helpers
+    //                         Setup helpers
     // ----------------------------------------------------------------
 
     protected function announceRunMode()
@@ -126,10 +100,11 @@ class CheckClassNames extends MigrateDataTaskBase
     {
         $this->listOfAllClasses = [];
         foreach (ClassInfo::subclassesFor(DataObject::class, false) as $className) {
-            $this->listOfAllClasses[addslashes($className)] = ClassInfo::shortName($className);
+            // Store raw FQCN instead of addslashes(), as we now use prepared queries
+            $this->listOfAllClasses[$className] = ClassInfo::shortName($className);
         }
         $this->countsOfAllClasses = array_count_values($this->listOfAllClasses);
-        $this->tableNameToClassMap = null; // invalidate cache
+        $this->tableNameToClassMap = null;
     }
 
     protected function loadDbTables()
@@ -168,11 +143,11 @@ class CheckClassNames extends MigrateDataTaskBase
             );
         }
 
-        if (! $tableName) {
+        if (!$tableName) {
             $this->flushNow('... Can not find: ' . $objectClassName . '.table_name in code ', 'error');
             return;
         }
-        if (! $this->tableExists($tableName)) {
+        if (!$this->tableExists($tableName)) {
             $this->flushNow('... Can not find: ' . $tableName . ' in database.', 'error');
             return;
         }
@@ -181,7 +156,7 @@ class CheckClassNames extends MigrateDataTaskBase
         $this->flushNow('... ' . $count . ' rows');
 
         foreach ($this->fieldsToCheckFor($objectClassName) as $fieldName) {
-            if (! $this->fieldExists($tableName, $fieldName)) {
+            if (!$this->fieldExists($tableName, $fieldName)) {
                 $this->flushNow('... Can not find: ' . $tableName . '.' . $fieldName . ' in database.');
                 continue;
             }
@@ -198,17 +173,13 @@ class CheckClassNames extends MigrateDataTaskBase
                 $fields[] = $f;
             }
         }
-        return $fields;
+        return array_unique($fields);
     }
 
     // ----------------------------------------------------------------
-    //                          Fixing logic
+    //                           Fixing logic
     // ----------------------------------------------------------------
 
-    /**
-     * Top-level fixer for one (table, field) pair. Two passes, then recursion
-     * into _Live / _Versions variants.
-     */
     protected function fixClassNames(
         string $tableName,
         string $objectClassName,
@@ -219,6 +190,7 @@ class CheckClassNames extends MigrateDataTaskBase
 
         $where = $this->buildWhereClause($fieldName);
         $rowsToFix = (int) DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $where)->value();
+
         if ($rowsToFix === 0) {
             $this->flushNow('... no broken values', 'created');
         } else {
@@ -228,23 +200,15 @@ class CheckClassNames extends MigrateDataTaskBase
                 $this->fixFieldSize($tableName);
             }
 
-            // ===== Pass 1: bulk fix by distinct broken value =====
-            $this->bulkFixByDistinctValue($tableName, $fieldName, $where);
-
-            // ===== Pass 2: per-row (ClassName only) =====
             if ('ClassName' === $fieldName) {
-                $remaining = (int) DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $where)->value();
-                if ($remaining > 0) {
-                    $this->flushNow('... ' . $remaining . ' row(s) still to resolve individually:');
-                    $this->perRowFixClassName($tableName, $objectClassName, $fieldName, $where);
-                }
+                $this->bulkFixByDistinctValue($tableName, $objectClassName, $fieldName, $where);
             } else {
-                $this->flushNow('... Setting "' . $tableName . '"."' . $fieldName . '" TO empty WHERE ' . $where, 'created');
-                $this->applyUpdate('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'\' WHERE ' . $where);
+                $this->flushNow('... Setting broken "' . $tableName . '"."' . $fieldName . '" to NULL in bulk', 'created');
+                $this->applyUpdate('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = NULL WHERE ' . $where);
             }
         }
 
-        // recurse into versioned variants
+        // Recurse into versioned variants
         if (false === $versionedTable) {
             foreach (['_Live', '_Versions'] as $extension) {
                 $testTable = $tableName . $extension;
@@ -266,6 +230,7 @@ class CheckClassNames extends MigrateDataTaskBase
         }
         $whereNull = $where . ' AND ("' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\')';
         $whereBad = $where . ' AND NOT ("' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\')';
+
         $nullCount = (int) DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $whereNull)->value();
         $badCount = (int) DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $whereBad)->value();
 
@@ -279,167 +244,58 @@ class CheckClassNames extends MigrateDataTaskBase
     }
 
     /**
-     * Pass 1: for each distinct broken value, try the short-name/table-name
-     * lookup. If it returns a unique known class, bulk-update every row with
-     * that value in a single UPDATE.
+     * Value-to-Value Bulk Fix
+     * Finds every distinct broken value and maps it to a new value via a single UPDATE query.
      */
-    protected function bulkFixByDistinctValue(string $tableName, string $fieldName, string $where)
+    protected function bulkFixByDistinctValue(string $tableName, string $objectClassName, string $fieldName, string $where)
     {
         $rows = DB::query(
             'SELECT "' . $fieldName . '" AS bad_value, COUNT("ID") AS c
             FROM "' . $tableName . '"
+            WHERE ' . $where . '
             GROUP BY "' . $fieldName . '"
-            HAVING ' . $where . '
             ORDER BY c DESC'
         );
-        foreach ($rows as $row) {
-            $originalValue = $row['bad_value'] ?? '';
-            $countForValue = (int) $row['c'];
-            $displayValue = $originalValue !== '' ? $originalValue : '<empty/null>';
-            $resolved = $originalValue !== '' ? $this->findMatchingClassname($originalValue) : null;
 
-            if ($resolved) {
-                $this->flushNow(
-                    '... ' . $countForValue . ' row(s): ' . $displayValue . ' → ' . $resolved
-                    . ' [bulk fix — short-name match against known class or table]',
-                    'created'
-                );
+        foreach ($rows as $row) {
+            $originalValue = $row['bad_value'];
+            $countForValue = (int) $row['c'];
+            $isEmpty = ($originalValue === null || $originalValue === '');
+            $displayValue = !$isEmpty ? $originalValue : '<empty/null>';
+
+            // 1. Try resolving via short name match
+            $resolved = !$isEmpty ? $this->findMatchingClassname($originalValue) : null;
+            $reason = 'short-name match';
+
+            // 2. Fallback to best overall class for this table
+            if (!$resolved) {
+                $resolved = $this->bestClassName($objectClassName, $tableName, $fieldName);
+                $reason = 'fallback to best class';
+            }
+
+            $this->flushNow(
+                '... ' . $countForValue . ' row(s): ' . $displayValue . ' → ' . $resolved . ' [' . $reason . ']',
+                $reason === 'short-name match' ? 'created' : 'error'
+            );
+
+            if ($isEmpty) {
                 $this->applyUpdate(
-                    'UPDATE "' . $tableName . '"
-                    SET "' . $tableName . '"."' . $fieldName . '" = \'' . $resolved . '\'
-                    WHERE "' . $fieldName . '" = \'' . addslashes($originalValue) . "'"
+                    'UPDATE "' . $tableName . '" SET "' . $fieldName . '" = ? WHERE "' . $fieldName . '" IS NULL OR "' . $fieldName . '" = \'\'',
+                    [$resolved]
                 );
             } else {
-                $this->flushNow(
-                    '... ' . $countForValue . ' row(s): ' . $displayValue
-                    . ' → no short-name resolution; will try per-row'
+                $this->applyUpdate(
+                    'UPDATE "' . $tableName . '" SET "' . $fieldName . '" = ? WHERE "' . $fieldName . '" = ?',
+                    [$resolved, $originalValue]
                 );
             }
         }
-    }
-
-    /**
-     * Pass 2: per-row resolution for the ClassName field. Each row gets one of:
-     *   (1) short-name match (safety net — same as Pass 1, in case Pass 1
-     *       didn't fire for some reason);
-     *   (2) row exists in exactly one child-class table;
-     *   (3) bestClassName() fallback.
-     *
-     * Results are grouped by (oldValue, newValue, reason) and applied as one
-     * UPDATE per group, so output is one line per group instead of per row.
-     */
-    protected function perRowFixClassName(string $tableName, string $objectClassName, string $fieldName, string $where)
-    {
-        $childTables = $this->isVersionsTable($tableName)
-            ? []
-            : $this->buildChildTableMap($tableName, $objectClassName);
-
-        $rows = DB::query('SELECT "ID", "' . $fieldName . '" FROM "' . $tableName . '" WHERE ' . $where);
-
-        $actions = []; // key = old||new||reason
-        foreach ($rows as $row) {
-            $originalValue = $row[$fieldName] ?? '';
-            $id = (int) $row['ID'];
-
-            [$newClassSlashed, $reason] = $this->resolveOneRow($id, $originalValue, $childTables, $objectClassName, $tableName, $fieldName);
-
-            $key = $originalValue . '||' . $newClassSlashed . '||' . $reason;
-            if (! isset($actions[$key])) {
-                $actions[$key] = ['ids' => [], 'old' => $originalValue, 'new' => $newClassSlashed, 'reason' => $reason];
-            }
-            $actions[$key]['ids'][] = $id;
-        }
-
-        foreach ($actions as $action) {
-            $this->reportAndApplyGroup($tableName, $fieldName, $action);
-        }
-    }
-
-    /**
-     * Decide the new ClassName for one row. Returns [slashedFqcn, reason].
-     */
-    protected function resolveOneRow(
-        int $id,
-        string $originalValue,
-        array $childTables,
-        string $objectClassName,
-        string $tableName,
-        string $fieldName
-    ): array {
-        // (1) short-name safety net
-        if ($originalValue !== '') {
-            $match = $this->findMatchingClassname($originalValue);
-            if ($match) {
-                return [$match, 'short-name match (safety net)'];
-            }
-        }
-
-        // (2) child-table existence check
-        if (! empty($childTables)) {
-            $matched = [];
-            foreach ($childTables as $optionClassName => $optionTableName) {
-                $hasMatch = (int) DB::query(
-                    'SELECT COUNT(*) FROM "' . $optionTableName . '" WHERE "ID" = ' . $id
-                )->value();
-                if ($hasMatch > 0) {
-                    $matched[] = $optionClassName;
-                    if (count($matched) > 1) {
-                        break;
-                    }
-                }
-            }
-            if (count($matched) === 1) {
-                return [addslashes($matched[0]), 'row exists in exactly one child table (' . $matched[0] . ')'];
-            }
-        }
-
-        // (3) fallback
-        $best = $this->bestClassName($objectClassName, $tableName, $fieldName);
-        return [addslashes($best), 'fallback: best guess (' . $best . ') — no other heuristic resolved this row'];
-    }
-
-    protected function reportAndApplyGroup(string $tableName, string $fieldName, array $action)
-    {
-        $rowCount = count($action['ids']);
-        $oldDisplay = $action['old'] !== '' ? $action['old'] : '<empty/null>';
-        $isFallback = strpos($action['reason'], 'fallback') === 0;
-        $level = $isFallback ? 'error' : 'created';
-
-        $sampleIds = array_slice($action['ids'], 0, 5);
-        $idsDisplay = implode(', ', $sampleIds);
-        if ($rowCount > count($sampleIds)) {
-            $idsDisplay .= ', … (' . $rowCount . ' total)';
-        }
-
-        $this->flushNow(
-            '... ' . $rowCount . ' row(s): ' . $oldDisplay . ' → ' . $action['new']
-            . ' [' . $action['reason'] . ']',
-            $level
-        );
-        $this->flushNow('... ... IDs: ' . $idsDisplay);
-
-        $idList = implode(',', array_map('intval', $action['ids']));
-        $this->applyUpdate(
-            'UPDATE "' . $tableName . '"
-            SET "' . $tableName . '"."' . $fieldName . '" = \'' . $action['new'] . '\'
-            WHERE "ID" IN (' . $idList . ')'
-        );
     }
 
     // ----------------------------------------------------------------
     //                       Lookup / resolution
     // ----------------------------------------------------------------
 
-    /**
-     * Given a (possibly stale) class name, find the single best matching known
-     * class. Returns the addslashes()'d FQCN (so it can be dropped straight
-     * into single-quoted SQL), or null if no unique match.
-     *
-     * Strategies:
-     *   (a) extract the short class name and match it against known classes;
-     *   (b) if (a) has no unique match, match the short name against known
-     *       table names (exact, then trailing "_<shortName>").
-     */
     protected function findMatchingClassname(string $className): ?string
     {
         if ($className === '') {
@@ -452,9 +308,9 @@ class CheckClassNames extends MigrateDataTaskBase
 
         // (a) match by short class name
         $byShort = [];
-        foreach ($this->listOfAllClasses as $fqcnSlashed => $fqcnShort) {
+        foreach ($this->listOfAllClasses as $fqcn => $fqcnShort) {
             if ($shortName === $fqcnShort) {
-                $byShort[$fqcnSlashed] = $fqcnSlashed;
+                $byShort[$fqcn] = $fqcn;
             }
         }
         if (count($byShort) === 1) {
@@ -469,16 +325,18 @@ class CheckClassNames extends MigrateDataTaskBase
         if (isset($tableMap[$shortName]) && count($tableMap[$shortName]) === 1) {
             return $tableMap[$shortName][0];
         }
+
         $trailing = [];
         $suffix = '_' . $shortName;
         $suffixLen = strlen($suffix);
         foreach ($tableMap as $tableName => $fqcnList) {
             if (strlen($tableName) > $suffixLen && substr($tableName, -$suffixLen) === $suffix) {
-                foreach ($fqcnList as $fqcnSlashed) {
-                    $trailing[$fqcnSlashed] = $fqcnSlashed;
+                foreach ($fqcnList as $fqcn) {
+                    $trailing[$fqcn] = $fqcn;
                 }
             }
         }
+
         return count($trailing) === 1 ? array_values($trailing)[0] : null;
     }
 
@@ -488,16 +346,14 @@ class CheckClassNames extends MigrateDataTaskBase
         return false === $pos ? $className : substr($className, $pos + 1);
     }
 
-    /** @return array<string,string[]> */
     protected function getTableNameToClassMap(): array
     {
         if (null !== $this->tableNameToClassMap) {
             return $this->tableNameToClassMap;
         }
         $map = [];
-        foreach ($this->listOfAllClasses as $fqcnSlashed => $fqcnShort) {
-            $fqcn = stripslashes($fqcnSlashed);
-            if (! class_exists($fqcn)) {
+        foreach ($this->listOfAllClasses as $fqcn => $fqcnShort) {
+            if (!class_exists($fqcn)) {
                 continue;
             }
             try {
@@ -506,71 +362,22 @@ class CheckClassNames extends MigrateDataTaskBase
                 continue;
             }
             if ($tableName) {
-                $map[$tableName][] = $fqcnSlashed;
+                $map[$tableName][] = $fqcn;
             }
         }
         return $this->tableNameToClassMap = $map;
     }
 
-    /**
-     * Build the per-call child-table lookup. Suffix-aware: a recursive call
-     * on a _Live table will check _Live subclass tables (not the base ones).
-     *
-     * Bug fix: the previous code passed $objectClassName here, so every
-     * subclass row received the parent table — the join was therefore always
-     * true and $optionCount blew past 1, falling into the wrong fallback.
-     *
-     * @return array<string,string>  [classFqcn => tableName]
-     */
-    protected function buildChildTableMap(string $tableName, string $objectClassName): array
-    {
-        $suffix = $this->getTableSuffix($tableName);
-        $checkTables = [];
-        foreach (ClassInfo::subclassesFor($objectClassName) as $optionClassName) {
-            if ($optionClassName === $objectClassName) {
-                continue;
-            }
-            $base = $this->dataObjectSchema->tableName($optionClassName);
-            if (! $base) {
-                continue;
-            }
-            $optionTableName = $base . $suffix;
-            if ($optionTableName === $tableName) {
-                continue;
-            }
-            if (! $this->tableExists($optionTableName)) {
-                continue;
-            }
-            $checkTables[$optionClassName] = $optionTableName;
-        }
-        return $checkTables;
-    }
-
-    protected function getTableSuffix(string $tableName): string
-    {
-        if (substr($tableName, -5) === '_Live') {
-            return '_Live';
-        }
-        if (substr($tableName, -9) === '_Versions') {
-            return '_Versions';
-        }
-        return '';
-    }
-
-    protected function isVersionsTable(string $tableName): bool
-    {
-        return substr($tableName, -9) === '_Versions';
-    }
-
     protected function buildWhereClause(string $fieldName): string
     {
-        return '"' . $fieldName . '" NOT IN (\'' . implode("', '", array_keys($this->listOfAllClasses)) . "')";
+        // Safe implosion for keys since they are valid FQCNs
+        $known = implode("', '", array_keys($this->listOfAllClasses));
+        // We ensure known class strings are escaped purely for the WHERE IN clause
+        $known = addslashes($known);
+
+        return '"' . $fieldName . '" NOT IN (\'' . $known . '\')';
     }
 
-    /**
-     * Best valid value for a ClassName when no other heuristic works.
-     * Memoised per class+table+field.
-     */
     protected function bestClassName(string $objectClassName, string $tableName, string $fieldName): string
     {
         $key = $objectClassName . '_' . $tableName . '_' . $fieldName;
@@ -584,9 +391,9 @@ class CheckClassNames extends MigrateDataTaskBase
         $values = $obj->dbObject($fieldName)->enumValues(false);
         $best = '';
         $rowsForBest = DB::query(
-            'SELECT ' . $fieldName . ', COUNT(*) AS magnitude
-            FROM ' . $tableName . '
-            GROUP BY ' . $fieldName . '
+            'SELECT "' . $fieldName . '", COUNT(*) AS magnitude
+            FROM "' . $tableName . '"
+            GROUP BY "' . $fieldName . '"
             ORDER BY magnitude DESC
             LIMIT 1'
         );
@@ -596,7 +403,7 @@ class CheckClassNames extends MigrateDataTaskBase
                 break;
             }
         }
-        if (! $best) {
+        if (!$best) {
             $best = key($values);
         }
         return $this->bestClassNameStore[$key] = $best;
@@ -606,11 +413,6 @@ class CheckClassNames extends MigrateDataTaskBase
     //              Suspicious-value sweep over every column
     // ----------------------------------------------------------------
 
-    /**
-     * Broader sweep: regex every column in every table for anything that
-     * looks like an FQCN, and try to remap it through findMatchingClassname()
-     * if the class doesn't actually exist.
-     */
     protected function findSuspiciousClassNames()
     {
         $this->flushNow('');
@@ -623,34 +425,37 @@ class CheckClassNames extends MigrateDataTaskBase
             $columns = DB::query('SHOW COLUMNS FROM "' . $tableName . '"');
             foreach ($columns as $col) {
                 $fieldName = $col['Field'];
+
+                // Fetch distinct values containing a backslash, processed in PHP for DB compatibility
                 $rows = DB::query(
-                    'SELECT "ID" AS row_id, "' . $fieldName . '" AS row_value
+                    'SELECT "' . $fieldName . '" AS row_value
                     FROM "' . $tableName . '"
-                    WHERE "' . $fieldName . '" REGEXP \'^[A-Z][A-Za-z0-9_]*(\\\\\\\\[A-Z][A-Za-z0-9_]*)+$\';'
+                    WHERE "' . $fieldName . '" LIKE \'%\\\\%\'
+                    GROUP BY "' . $fieldName . '"'
                 );
+
                 foreach ($rows as $row) {
                     $value = $row['row_value'] ?? '';
-                    if ($value === '' || class_exists($value)) {
+
+                    // Simple PHP regex to replace the old MySQL REGEXP implementation
+                    if ($value === '' || class_exists($value) || !preg_match('/^[A-Z][A-Za-z0-9_]*(\\\\[A-Z][A-Za-z0-9_]*)+$/', $value)) {
                         continue;
                     }
-                    $id = $row['row_id'] ?? null;
+
                     $better = $this->findMatchingClassname($value);
                     if ($better) {
                         $this->flushNow(
-                            '... ' . $tableName . '.' . $fieldName . ' #' . $id
-                            . ': ' . $value . ' → ' . $better,
+                            '... ' . $tableName . '.' . $fieldName . ': ' . $value . ' → ' . $better . ' (Bulk updated)',
                             'created'
                         );
                         $this->applyUpdate(
-                            'UPDATE "' . $tableName . '"
-                            SET "' . $fieldName . '" = \'' . $better . '\'
-                            WHERE "ID" = ' . (int) $id
+                            'UPDATE "' . $tableName . '" SET "' . $fieldName . '" = ? WHERE "' . $fieldName . '" = ?',
+                            [$better, $value]
                         );
                     } else {
                         $unresolved[] = [
                             'Table' => $tableName,
                             'Field' => $fieldName,
-                            'ID' => $id,
                             'Value' => $value,
                         ];
                     }
@@ -662,11 +467,10 @@ class CheckClassNames extends MigrateDataTaskBase
             $this->flushNow('... no unresolved suspicious values', 'created');
             return;
         }
+
         $this->flushNow('... ' . count($unresolved) . ' suspicious values could not be auto-remapped:', 'error');
         foreach ($unresolved as $u) {
-            $this->flushNow(
-                '... ... ' . $u['Table'] . '.' . $u['Field'] . ' #' . $u['ID'] . ': ' . $u['Value']
-            );
+            $this->flushNow('... ... ' . $u['Table'] . '.' . $u['Field'] . ' Value: ' . $u['Value']);
         }
     }
 
@@ -675,23 +479,32 @@ class CheckClassNames extends MigrateDataTaskBase
     // ----------------------------------------------------------------
 
     /**
-     * Single chokepoint for every DB write produced by this task.
-     * Honours $dryRun: in dry-run mode the SQL is not executed.
+     * Single chokepoint for every DB write. Uses DB::prepared_query().
      */
-    protected function applyUpdate(string $sql)
+    protected function applyUpdate(string $sql, array $params = [])
     {
         if ($this->dryRun) {
             return;
         }
-        $this->runUpdateQuery($sql, 2);
+
+        if (empty($params)) {
+            DB::query($sql);
+        } else {
+            DB::prepared_query($sql, $params);
+        }
     }
 
     protected function fixFieldSize(string $tableName)
     {
-        $database = DB::get_conn()->getSelectedDatabase();
         if ($this->dryRun) {
             return;
         }
-        DB::query('ALTER TABLE "' . $database . '"."' . $tableName . '" CHANGE ClassName ClassName VARCHAR(255);');
+
+        try {
+            // Attempt to expand field safely (still mostly MySQL syntax, but safely wrapped)
+            DB::query('ALTER TABLE "' . $tableName . '" MODIFY "ClassName" VARCHAR(255)');
+        } catch (\Exception $e) {
+            // Fails silently if syntax is unsupported on Postgres/SQLite or column is already sized
+        }
     }
 }
