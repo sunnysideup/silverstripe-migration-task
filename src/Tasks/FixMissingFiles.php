@@ -2,6 +2,9 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Symfony\Component\Console\Input\InputInterface;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
 use Exception;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
@@ -19,12 +22,12 @@ class FixMissingFiles extends BuildTask
     /**
      * @var string
      */
-    protected $title = 'Fix missing filename references in duplicate file records from SS3';
+    protected string $title = 'Fix missing filename references in duplicate file records from SS3';
 
     /**
      * @var string
      */
-    protected $description = 'When duplicate records exist for the same file in SS3 the silverstripe
+    protected static string $description = 'When duplicate records exist for the same file in SS3 the silverstripe
         data migration task will only update one. Causing the other files to "go missing". This task fixes that';
 
     /**
@@ -32,11 +35,10 @@ class FixMissingFiles extends BuildTask
      *
      * @param mixed $request
      */
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         $sql = 'SELECT * FROM File WHERE ClassName != \'SilverStripe\\Assets\\Folder\' AND FileFilename is NULL';
         $broken_rows = DB::query($sql);
-
         foreach ($broken_rows as $row) {
             $sql = "
             SELECT * FROM File WHERE
@@ -66,6 +68,7 @@ class FixMissingFiles extends BuildTask
                 $this->publishFile($row['ID']);
             }
         }
+        return Command::SUCCESS;
     }
 
     /**

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Symfony\Component\Console\Input\InputInterface;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
 use SilverStripe\Control\Director;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
@@ -16,14 +19,14 @@ class ImportSql extends BuildTask
      *
      * @var string
      */
-    protected $title = 'Import SQL';
+    protected string $title = 'Import SQL';
 
     /**
      * standard SS variable.
      *
      * @var string
      */
-    protected $description = 'CAREFUL!!! - Import data from an SQL file';
+    protected static string $description = 'CAREFUL!!! - Import data from an SQL file';
 
     private static $file_names = [
         // 'my-sql-file-goes-here.sql',
@@ -34,7 +37,7 @@ class ImportSql extends BuildTask
         return Director::isDev();
     }
 
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         foreach ($this->config()->get('file_names') as $fileName) {
             FlushNowImplementor::do_flush("<hr /><hr /><hr /><hr /><hr /><hr /><hr />START: '.{$fileName}.'<hr /><hr /><hr /><hr /><hr /><hr /><hr />");
@@ -74,7 +77,7 @@ class ImportSql extends BuildTask
 
             FlushNowImplementor::do_flush("<hr /><hr /><hr /><hr /><hr /><hr /><hr />END: '.{$fileName}.'<hr /><hr /><hr /><hr /><hr /><hr /><hr />");
         }
-
         FlushNowImplementor::do_flush('<hr /><hr /><hr /><hr /><hr /><hr /><hr />COMPLETED<hr /><hr /><hr /><hr /><hr /><hr /><hr />');
+        return Command::SUCCESS;
     }
 }

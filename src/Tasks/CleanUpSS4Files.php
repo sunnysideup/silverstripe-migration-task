@@ -2,6 +2,9 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Symfony\Component\Console\Input\InputInterface;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
 use SilverStripe\Assets\File;
 use SilverStripe\Control\Director;
 use SilverStripe\Dev\BuildTask;
@@ -17,19 +20,19 @@ class CleanUpSS4Files extends BuildTask
     /**
      * @var string
      */
-    protected $title = 'Removes non-existent files from DB';
+    protected string $title = 'Removes non-existent files from DB';
 
     /**
      * @var string
      */
-    protected $description = 'You can run this script straight after an upgrade to remove files that are not physically present.';
+    protected static string $description = 'You can run this script straight after an upgrade to remove files that are not physically present.';
 
     /**
      * Method to save all System dataobjects and trigger the onBeforeWrite() event handler.
      *
      * @param mixed $request
      */
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         $sql = '
         SELECT Filename
@@ -38,11 +41,10 @@ class CleanUpSS4Files extends BuildTask
         WHERE File_Live.ID IS NULL AND File.ClassName = \'SilverStripe\\\Assets\\\File\' ORDER BY File.Filename
         ';
         $rows = DB::query($sql);
-        echo '<h2>Files that are not published</h2>';
+        $output->writeln('<h2>Files that are not published</h2>');
         foreach ($rows as $row) {
             DB::alteration_message($row['Filename'], 'deleted');
         }
-
         $sql = '
             SELECT "Filename", "ID"
             FROM "File"
@@ -54,7 +56,7 @@ class CleanUpSS4Files extends BuildTask
         foreach ($rows as $row) {
             $fullName = $baseDir . $row['Filename'];
             if (file_exists($fullName)) {
-                echo '.';
+                $output->writeln('.');
             } else {
                 DB::alteration_message('DELETING: ' . $fullName, 'deleted');
                 $sql = 'DELETE FROM File WHERE ID = ' . $row['ID'] . ';';
@@ -63,5 +65,6 @@ class CleanUpSS4Files extends BuildTask
                 DB::query($sql);
             }
         }
+        return Command::SUCCESS;
     }
 }

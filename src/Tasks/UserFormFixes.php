@@ -12,9 +12,9 @@ use SilverStripe\Versioned\Versioned;
 
 class UserFormFixes extends MigrateDataTaskBase
 {
-    protected $title = 'Publish Userforms Models';
+    protected string $title = 'Publish Userforms Models';
 
-    protected $description = 'Some items in UserForms need to be saved / published - see: https://github.com/silverstripe/silverstripe-userforms/issues/804';
+    protected static string $description = 'Some items in UserForms need to be saved / published - see: https://github.com/silverstripe/silverstripe-userforms/issues/804';
 
     /**
      * @config

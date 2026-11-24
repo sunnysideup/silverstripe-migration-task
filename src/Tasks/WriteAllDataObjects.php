@@ -7,9 +7,9 @@ use SilverStripe\ORM\DataObject;
 
 class WriteAllDataObjects extends MigrateDataTaskBase
 {
-    protected $title = 'Creates one of each DataObjects and then deletes it again';
+    protected string $title = 'Creates one of each DataObjects and then deletes it again';
 
-    protected $description = 'Use this task to find errors in your setup';
+    protected static string $description = 'Use this task to find errors in your setup';
 
     /**
      * @config

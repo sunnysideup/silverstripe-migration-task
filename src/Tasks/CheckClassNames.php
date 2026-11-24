@@ -15,11 +15,11 @@ use SilverStripe\ORM\DB;
 
 class CheckClassNames extends MigrateDataTaskBase
 {
-    protected $title = 'Check all tables for valid class names';
+    protected string $title = 'Check all tables for valid class names';
 
-    protected $description = 'Check all tables for valid class names';
+    protected static string $description = 'Check all tables for valid class names';
 
-    private static $segment = 'check-class-names';
+    protected static string $commandName = 'check-class-names';
 
     /**
      * @config

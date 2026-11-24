@@ -6,9 +6,9 @@ use SilverStripe\ORM\DB;
 
 class DraftVsLive extends MigrateDataTaskBase
 {
-    protected $title = 'Compare Drafts vs Live';
+    protected string $title = 'Compare Drafts vs Live';
 
-    protected $description = 'Go through every table and compare DRAFT vs Live';
+    protected static string $description = 'Go through every table and compare DRAFT vs Live';
 
     /**
      * @config

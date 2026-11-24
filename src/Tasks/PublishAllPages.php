@@ -2,6 +2,9 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Symfony\Component\Console\Input\InputInterface;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
@@ -20,9 +23,9 @@ use Sunnysideup\Flush\FlushNowImplementor;
  */
 class PublishAllPages extends BuildTask
 {
-    protected $title = 'Publish All Pages';
+    protected string $title = 'Publish All Pages';
 
-    protected $description = 'Publish All Pages on the Entire Site (copy content from draft to live)';
+    protected static string $description = 'Publish All Pages on the Entire Site (copy content from draft to live)';
 
     protected $step = 10;
 
@@ -44,7 +47,7 @@ class PublishAllPages extends BuildTask
         return $this;
     }
 
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         Environment::increaseTimeLimitTo();
         Environment::increaseMemoryLimitTo();
@@ -106,5 +109,6 @@ class PublishAllPages extends BuildTask
                 '</form>';
             FlushNowImplementor::do_flush($response);
         }
+        return Command::SUCCESS;
     }
 }

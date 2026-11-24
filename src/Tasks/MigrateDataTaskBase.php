@@ -2,6 +2,9 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Symfony\Component\Console\Input\InputInterface;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
 use Exception;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
@@ -15,9 +18,9 @@ abstract class MigrateDataTaskBase extends BuildTask
     use FlushNow;
     use HelperMethods;
 
-    protected $title = 'Abstract Migration Class';
+    protected string $title = 'Abstract Migration Class';
 
-    protected $description = 'Please extend this class';
+    protected static string $description = 'Please extend this class';
 
     /**
      * @config
@@ -32,7 +35,7 @@ abstract class MigrateDataTaskBase extends BuildTask
 
     private $_cacheFieldExists = [];
 
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         $this->flushNowLine();
         $this->flushNow('THE START - look out for THE END ...');
@@ -49,9 +52,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         ini_set('memory_limit', '1024M');
         Environment::increaseMemoryLimitTo();
         Environment::increaseTimeLimitTo(7200);
-
         $this->performMigration();
-
         $this->flushNow('</ul>', '', false);
         $this->flushNow('');
         $this->flushNow('');
@@ -60,6 +61,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         $this->flushNow('THE END');
         $this->flushNowLine();
         $this->flushNow('');
+        return Command::SUCCESS;
     }
 
     /**

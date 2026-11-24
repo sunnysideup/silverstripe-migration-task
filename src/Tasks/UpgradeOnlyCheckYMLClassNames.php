@@ -13,16 +13,16 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
     /**
      * @var string
      */
-    protected $title = 'Load your list of class names';
+    protected string $title = 'Load your list of class names';
 
-    protected $description = 'Upgrade ONLY!';
+    protected static string $description = 'Upgrade ONLY!';
 
     /**
      * @config
      */
     private static $is_enabled = true;
 
-    private static $segment = 'check-yml-class-names';
+    protected static string $commandName = 'check-yml-class-names';
 
     private static $folders_to_ignore = [
         'public',

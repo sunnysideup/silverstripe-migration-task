@@ -15,12 +15,12 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     /**
      * @var string
      */
-    protected $title = 'Migrate Text Or JSON to Proper Relationship in DB';
+    protected string $title = 'Migrate Text Or JSON to Proper Relationship in DB';
 
     /**
      * @var string
      */
-    protected $description = '
+    protected static string $description = '
         For example, it can convert all the values of all DB columnns used by listbox fields
         from comma separated strings to JSON and then to Many Many';
 
