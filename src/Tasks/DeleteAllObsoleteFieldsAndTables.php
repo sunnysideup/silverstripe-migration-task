@@ -101,7 +101,7 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
         FlushNowImplementor::do_flush($message);
     }
 
-    protected function execute($sql)
+    protected function execute($sql, PolyOutput $output)
     {
         if (empty($_REQUEST['forreal'])) {
             FlushNowImplementor::do_flush(sprintf('DRY RUN: Not running query: %s', $sql));
