@@ -68,6 +68,7 @@ class FixMissingFiles extends BuildTask
                 $this->publishFile($row['ID']);
             }
         }
+
         return Command::SUCCESS;
     }
 

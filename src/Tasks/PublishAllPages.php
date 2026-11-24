@@ -109,6 +109,7 @@ class PublishAllPages extends BuildTask
                 '</form>';
             FlushNowImplementor::do_flush($response);
         }
+
         return Command::SUCCESS;
     }
 }

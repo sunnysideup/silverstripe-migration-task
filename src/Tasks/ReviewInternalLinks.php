@@ -56,9 +56,11 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         if ($input->getOption('ids')) {
             $ids = explode(',', (string) $input->getOption('ids'));
         }
+
         if ($input->getOption('type')) {
             $this->type = $input->getOption('type');
         }
+
         $objects = DataList::create();
         if (count($ids)) {
             echo $tableHTML;
@@ -88,6 +90,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 $start = 0;
                 $output->writeln('<h1>Random Selection</h1>');
             }
+
             for ($i = 0; $i < $limit; $i += $this->step) {
                 $objects = null;
                 if ($isPage) {
@@ -104,11 +107,13 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 }
             }
         }
+
         $linksAll = [];
         ksort($this->allLinks);
         foreach ($this->allLinks as $url => $details) {
             $linksAll[] = $url . ' | ' . $details['count'];
         }
+
         echo '
                     <tr>
                         <th>---</th>
@@ -128,6 +133,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         foreach ($this->replacements as $details) {
             $replacementsAll[] = 'FR: ' . $details['from'] . '<br />TO: ' . $details['to'] . '<br />RS: ' . $details['result'] . '<br /><br />';
         }
+
         echo '
                     <tr>
                         <th>---</th>
@@ -263,6 +269,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
             }
         }
     }
+
     public function getOptions(): array
     {
         return [new InputOption('ids', null, InputOption::VALUE_NONE, 'do something specific'), new InputOption('type', null, InputOption::VALUE_NONE, 'do something specific'), new InputOption('page', null, InputOption::VALUE_NONE, 'do something specific')];

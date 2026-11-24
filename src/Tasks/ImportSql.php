@@ -77,6 +77,7 @@ class ImportSql extends BuildTask
 
             FlushNowImplementor::do_flush("<hr /><hr /><hr /><hr /><hr /><hr /><hr />END: '.{$fileName}.'<hr /><hr /><hr /><hr /><hr /><hr /><hr />");
         }
+
         FlushNowImplementor::do_flush('<hr /><hr /><hr /><hr /><hr /><hr /><hr />COMPLETED<hr /><hr /><hr /><hr /><hr /><hr /><hr />');
         return Command::SUCCESS;
     }

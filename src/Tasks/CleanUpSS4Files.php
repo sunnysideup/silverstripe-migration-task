@@ -45,6 +45,7 @@ class CleanUpSS4Files extends BuildTask
         foreach ($rows as $row) {
             DB::alteration_message($row['Filename'], 'deleted');
         }
+
         $sql = '
             SELECT "Filename", "ID"
             FROM "File"
@@ -65,6 +66,7 @@ class CleanUpSS4Files extends BuildTask
                 DB::query($sql);
             }
         }
+
         return Command::SUCCESS;
     }
 }

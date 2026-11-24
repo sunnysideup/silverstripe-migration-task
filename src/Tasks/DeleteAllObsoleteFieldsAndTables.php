@@ -66,11 +66,13 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
         if (empty($_REQUEST['forreal'])) {
             FlushNowImplementor::do_flush('=== Running in dry run mode. Add GET variable forreal to run for real. SQL will be displayed, but not executed ===');
         }
+
         if (empty($_REQUEST['flush'])) {
             FlushNowImplementor::do_flush('ERROR: Please run flush=1 to ensure manifest is up to date');
 
             return;
         }
+
         foreach ($this->config()->deleted_tables as $tableName) {
             if ('' === DB::query(sprintf("SHOW TABLES LIKE '%s'", $tableName))->value()) {
                 FlushNowImplementor::do_flush(sprintf('INFO: Table %s was not found ', $tableName));
@@ -80,13 +82,16 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
 
             $this->execute(sprintf('DROP TABLE "%s"', $tableName));
         }
+
         $obsoleteTables = $this->getTables(true);
         foreach ($obsoleteTables as $tableName) {
             $this->execute(sprintf('DROP TABLE "%s"', $tableName));
         }
+
         foreach ($this->getTables() as $tableName) {
             $this->deleteFieldsAndIndexes($tableName);
         }
+
         FlushNowImplementor::do_flush('Done');
         return Command::SUCCESS;
     }
