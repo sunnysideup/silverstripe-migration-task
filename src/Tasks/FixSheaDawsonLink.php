@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Sunnysideup\MigrateData\Tasks;
 
 class FixSheaDawsonLink extends MigrateDataTask
@@ -8,5 +10,8 @@ class FixSheaDawsonLink extends MigrateDataTask
 
     protected $description = 'Moves table and changes class names';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 }

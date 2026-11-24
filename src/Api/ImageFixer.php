@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 class ImageFixer
 {
     public function makeImageProper($matches, ?string $prefix = '')

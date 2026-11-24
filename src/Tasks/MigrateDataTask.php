@@ -10,7 +10,10 @@ class MigrateDataTask extends MigrateDataTaskBase
 
     protected $description = 'Migrates specific data defined in yml';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     /**
      * an array that is formatted like this:

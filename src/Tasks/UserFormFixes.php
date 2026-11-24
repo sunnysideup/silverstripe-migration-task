@@ -16,7 +16,10 @@ class UserFormFixes extends MigrateDataTaskBase
 
     protected $description = 'Some items in UserForms need to be saved / published - see: https://github.com/silverstripe/silverstripe-userforms/issues/804';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     protected function performMigration()
     {
@@ -82,6 +85,7 @@ class UserFormFixes extends MigrateDataTaskBase
 
                         continue;
                     }
+
                     $this->flushNow('... ERROR: : ' . $object->ClassName . ' relation => could not find: ' . $relationClassValue . ' WHERE ID = ' . $relationIDValue, 'error');
                     /** @var null|SiteTree $page */
                     $page = $parentClassName::get_by_id($relationIDValue);

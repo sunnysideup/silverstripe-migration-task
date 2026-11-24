@@ -2,6 +2,7 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Exception;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
 use Sunnysideup\Flush\FlushNow;
@@ -79,7 +80,7 @@ class FixMissingFiles extends BuildTask
         try {
             DB::query($sqlQuery);
             $this->flushNow($prefix . ' DONE ' . DB::affected_rows() . ' rows affected');
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->flushNow($prefix . "ERROR: Unable to run '{$sqlQuery}'", 'deleted');
             $this->flushNow('' . $exception->getMessage() . '', 'deleted');
         }

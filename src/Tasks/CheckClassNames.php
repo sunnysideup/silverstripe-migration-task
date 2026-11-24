@@ -12,7 +12,6 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DataObjectSchema;
 use SilverStripe\ORM\DB;
-use SilverStripe\Versioned\Versioned;
 
 class CheckClassNames extends MigrateDataTaskBase
 {
@@ -22,7 +21,10 @@ class CheckClassNames extends MigrateDataTaskBase
 
     private static $segment = 'check-class-names';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     protected $listOfAllClasses = [];
 
@@ -66,6 +68,7 @@ class CheckClassNames extends MigrateDataTaskBase
         } else {
             $this->flushNow('RUNNING IN FIX MODE (?forreal=1 detected)', 'created');
         }
+
         $this->flushNowLine();
 
         $this->dbTablesPresent = [];
@@ -82,12 +85,14 @@ class CheckClassNames extends MigrateDataTaskBase
             // Pure class names to prevent double slashes in output
             $this->listOfAllClasses[$objectClassName] = ClassInfo::shortName($objectClassName);
         }
+
         $this->countsOfAllClasses = array_count_values($this->listOfAllClasses);
 
         foreach ($objectClassNames as $objectClassName) {
             if (count($this->onlyRunFor) && !in_array($objectClassName, $this->onlyRunFor, true)) {
                 continue;
             }
+
             $fields = $this->dataObjectSchema->databaseFields($objectClassName, false);
             if (count($fields) > 0) {
                 $tableName = $this->dataObjectSchema->tableName($objectClassName);
@@ -100,6 +105,7 @@ class CheckClassNames extends MigrateDataTaskBase
                             $allFields[] = $additionalField;
                         }
                     }
+
                     foreach ($allFields as $fieldName) {
                         if ($this->fieldExists($tableName, $fieldName)) {
                             $this->fixClassNames($tableName, $objectClassName, $fieldName);
@@ -124,7 +130,7 @@ class CheckClassNames extends MigrateDataTaskBase
     {
         $this->processedFields[$tableName . '.' . $fieldName] = true;
 
-        $slashedClasses = array_map('addslashes', array_keys($this->listOfAllClasses));
+        $slashedClasses = array_map(addslashes(...), array_keys($this->listOfAllClasses));
         $where = '"' . $fieldName . '" NOT IN (\'' . implode("', '", $slashedClasses) . "')";
 
         $rowsToFix = DB::query('SELECT COUNT("ID") FROM "' . $tableName . '" WHERE ' . $where)->value();
@@ -180,7 +186,7 @@ class CheckClassNames extends MigrateDataTaskBase
                     } else {
                         if ($mappedByString && $suggested) {
                             // 1. We know the match via string. Bulk update!
-                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($suggested) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . '\'', 2);
+                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($suggested) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . "'", 2);
                         } elseif ('ClassName' === $fieldName) {
                             // 2. Unfindable by string. Let's use bulk child-table IN() checks!
                             $options = ClassInfo::subclassesFor($objectClassName);
@@ -188,6 +194,7 @@ class CheckClassNames extends MigrateDataTaskBase
                                 if ($optionClassName === $objectClassName) {
                                     continue;
                                 }
+
                                 $optionTableName = $this->dataObjectSchema->tableName($optionClassName);
                                 if ($this->tableExists($optionTableName) && $optionTableName !== $tableName) {
                                     // Set the ClassName only for rows that ALSO exist in the specific child table
@@ -197,12 +204,13 @@ class CheckClassNames extends MigrateDataTaskBase
                                     );
                                 }
                             }
+
                             // 3. Fallback for any rows holding this badName that didn't exist in any child tables
                             $bestValue = $this->bestClassName($objectClassName, $tableName, $fieldName);
-                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($bestValue) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . '\'', 2);
+                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($bestValue) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . "'", 2);
                         } else {
                             // Not a classname field, clear the bad value
-                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . '\'', 2);
+                            $this->runUpdateQuery('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . "'", 2);
                         }
                     }
                 }
@@ -247,6 +255,7 @@ class CheckClassNames extends MigrateDataTaskBase
                             $this->flushNow($tableName);
                             $tablePrinted = true;
                         }
+
                         if (!$fieldPrinted) {
                             $this->flushNow('---' . $fieldName);
                             $fieldPrinted = true;
@@ -261,7 +270,7 @@ class CheckClassNames extends MigrateDataTaskBase
 
                         if ($this->forReal && $suggested) {
                             // Already bulk updates!
-                            DB::query('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($suggested) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . '\'');
+                            DB::query('UPDATE "' . $tableName . '" SET "' . $fieldName . '" = \'' . addslashes($suggested) . '\' WHERE "' . $fieldName . '" = \'' . addslashes($badName) . "'");
                         }
                     }
                 }
@@ -284,6 +293,7 @@ class CheckClassNames extends MigrateDataTaskBase
                 $this->bestClassNameStore[$keyForStore] = 'Page';
                 return $this->bestClassNameStore[$keyForStore];
             }
+
             $values = $obj->dbObject($fieldName)->enumValues(false);
             $sql = 'SELECT "' . $fieldName . '", COUNT(*) AS magnitude FROM "' . $tableName . '" GROUP BY "' . $fieldName . '" ORDER BY magnitude DESC LIMIT 1';
 
@@ -295,9 +305,11 @@ class CheckClassNames extends MigrateDataTaskBase
                     break;
                 }
             }
+
             if (!$bestValue && !empty($values)) {
                 $bestValue = key($values);
             }
+
             $this->bestClassNameStore[$keyForStore] = $bestValue ?: $objectClassName;
         }
 

@@ -124,11 +124,12 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
                 foreach (['obsolete', 'copy', 'backup'] as $string) {
                     $haystack = strtolower($table);
                     $needle = '_' . $string;
-                    if (false !== strpos($haystack, $needle)) {
+                    if (str_contains($haystack, $needle)) {
                         $in = true;
                     }
                 }
             }
+
             if ($in) {
                 $tables[$table] = $table;
             }

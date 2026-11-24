@@ -19,7 +19,10 @@ class CheckDataObjectStatics extends MigrateDataTaskBase
 
     protected $description = 'Goes through all Data Object classes and checks for missing statics';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     protected $objectClassNames = [];
 
@@ -59,6 +62,7 @@ class CheckDataObjectStatics extends MigrateDataTaskBase
             $slashed = addslashes($objectClassName);
             $this->listOfAllClasses[$slashed] = ClassInfo::shortName($objectClassName);
         }
+
         $this->countsOfAllClasses = array_count_values($this->listOfAllClasses);
         $this->summaryAndSearchableCheck();
     }
@@ -84,12 +88,14 @@ class CheckDataObjectStatics extends MigrateDataTaskBase
                 } else {
                     $recommended = $dbFields;
                 }
+
                 if (count($recommended) > 0) {
                     foreach ($recommended as $k => $v) {
                         if (in_array($v, $this->Config()->no_searchable_fields, true)) {
                             unset($recommended[$k]);
                         }
                     }
+
                     $values[$objectClassName] = $objectClassName . ':' .
                         "\n  searchable_fields:\n    - " .
                         implode("\n    - ", $recommended)
@@ -97,8 +103,10 @@ class CheckDataObjectStatics extends MigrateDataTaskBase
                     $this->flushNow('... Error in ' . $objectClassName . ' there are summary fields, but no searchable fields', 'error');
                 }
             }
+
             // $this->flushNow('... OK', 'created');
         }
+
         echo '<pre>';
         echo "\n# Autocreated from: Sunnysideup-MigrateData-Tasks-CheckDataObjectStatics\n\n";
         echo implode('', $values);

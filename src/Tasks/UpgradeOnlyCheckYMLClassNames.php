@@ -17,7 +17,10 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
 
     protected $description = 'Upgrade ONLY!';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     private static $segment = 'check-yml-class-names';
 
@@ -53,6 +56,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                 }
             }
         }
+
         foreach ($ymlFiles as $fileName) {
             $this->flushNowLine();
             $this->flushNow('STARTING TESTING: ' . $fileName . '');
@@ -62,6 +66,7 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
             if (! file_exists($fileName)) {
                 die(' Could not find ' . $fileName);
             }
+
             $fp = fopen($fileName, 'r');
             $hasLine = true;
             while ($hasLine) {
@@ -69,11 +74,12 @@ class UpgradeOnlyCheckYMLClassNames extends MigrateDataTaskBase
                 if (! $line) {
                     break;
                 }
+
                 ++$count;
                 $isProperty = false;
                 // $this->flushNow( '...';
                 //skip lines that are indented
-                if (' ' === substr($line, 0, 1)) {
+                if (str_starts_with($line, ' ')) {
                     $isProperty = true;
                 }
 
@@ -115,9 +121,11 @@ COULD NOT FIND ' . $className . '<br>');
                     if (! strpos($line, '\\')) {
                         continue;
                     }
+
                     if (strpos($line, '*')) {
                         continue;
                     }
+
                     $line = str_replace(':', '', $line);
                     $line = trim($line);
                     if (isset($alreadySet[$line])) {
@@ -133,8 +141,10 @@ ERROR: Could not find class ' . $line . '<br>');
                         }
                     }
                 }
+
                 //not a class name
             }
+
             fclose($fp);
             $this->flushNowLine();
             $this->flushNow('' . $count . ' lines');
@@ -149,7 +159,7 @@ ERROR: Could not find class ' . $line . '<br>');
         $ignore = $this->Config()->folders_to_ignore;
         $dir = rtrim($dir, '/') . '/';
         // Get and add directories of $dir
-        $directories = array_filter(glob($dir . '*'), 'is_dir');
+        $directories = array_filter(glob($dir . '*'), is_dir(...));
         // $subDir = array_merge($subDir, $directories);
         // Foreach directory, recursively get and add sub directories
         foreach ($directories as $directory) {

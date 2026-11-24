@@ -11,7 +11,10 @@ class WriteAllDataObjects extends MigrateDataTaskBase
 
     protected $description = 'Use this task to find errors in your setup';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     protected $listOfFieldTypesRaw = [];
 
@@ -88,6 +91,7 @@ class WriteAllDataObjects extends MigrateDataTaskBase
         } else {
             $this->listOfFieldTypesRaw[$type] = 1;
         }
+
         if (in_array($name, $ignoreList, true)) {
             $this->flushNow('... ... SKIPPING ' . $name);
         } else {
@@ -129,6 +133,7 @@ class WriteAllDataObjects extends MigrateDataTaskBase
 
                     break;
             }
+
             if (isset($this->listOfFieldTypesClean[$realType])) {
                 ++$this->listOfFieldTypesClean[$realType];
             } else {
@@ -159,8 +164,7 @@ class WriteAllDataObjects extends MigrateDataTaskBase
             if (in_array($objectClassName, $ignoreForCreationArray, true)) {
                 $this->flushNow('... IGNORING ');
             } else {
-                $defaultFields = isset($defaults[$objectClassName]) ?
-                    $defaults[$objectClassName] : [];
+                $defaultFields = $defaults[$objectClassName] ?? [];
                 $this->flushNow('... CREATING ');
                 $obj = $objectClassName::create($defaultFields);
                 $this->flushNow('... WRITING ');
@@ -176,12 +180,15 @@ class WriteAllDataObjects extends MigrateDataTaskBase
                             $obj->{$name} = $value;
                         }
                     }
+
                     $obj->write();
                 }
+
                 $this->flushNow('... DELETING ');
                 $obj->delete();
             }
         }
+
         $this->flushNowLine();
         $this->flushNow(print_r($this->listOfFieldTypesRaw, 1));
         $this->flushNowLine();
