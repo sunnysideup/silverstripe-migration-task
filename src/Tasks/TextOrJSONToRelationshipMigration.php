@@ -2,6 +2,7 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Exception;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\ORM\DB;
 use SilverStripe\Versioned\Versioned;
@@ -14,16 +15,19 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     /**
      * @var string
      */
-    protected $title = 'Migrate Text Or JSON to Proper Relationship in DB';
+    protected string $title = 'Migrate Text Or JSON to Proper Relationship in DB';
 
     /**
      * @var string
      */
-    protected $description = '
+    protected static string $description = '
         For example, it can convert all the values of all DB columnns used by listbox fields
         from comma separated strings to JSON and then to Many Many';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     protected $sanitiseCharList = [
         '"',
@@ -54,7 +58,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     private static $data_to_fix = [];
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     protected function performMigration()
     {
@@ -62,6 +66,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
         if (0 === count($dataToFix)) {
             user_error('You need to specify at least some data to fix!');
         }
+
         for ($i = 1; $i < 3; ++$i) {
             $this->flushNow('LOOP LOOP: ' . $i);
             foreach ($dataToFix as $className => $columns) {
@@ -77,6 +82,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
                         } elseif ('_Live' === $tableExtension) {
                             $stage = Versioned::LIVE;
                         }
+
                         if (null !== $stage) {
                             $this->testRelationships($className, $lookupMethod, $stage);
                         }
@@ -111,7 +117,7 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
 
     protected function updateRow($tableName, $id, $column, $fieldValue): string
     {
-        if (0 === strpos($fieldValue, '["') && strpos($fieldValue, '"]')) {
+        if (str_starts_with($fieldValue, '["') && strpos($fieldValue, '"]')) {
             $this->flushNow(
                 '... ... ... ... ... ' .
                 'column ' . $column . ' in table: ' . $tableName . ' with row ID: ' . $id .
@@ -190,13 +196,14 @@ class TextOrJSONToRelationshipMigration extends MigrateDataTaskBase
     protected function sanitiseChars(string $value): string
     {
         foreach ($this->sanitiseCharList as $char) {
-            if (false !== strpos($value, $char)) {
+            if (str_contains($value, $char)) {
                 $this->flushNow(
                     '... ... ... ... ... ... ' .
                     $char . ' was found in ' . $value . ' we are removing it',
                     'error'
                 );
             }
+
             $value = str_replace($char, '', (string) $value);
         }
 

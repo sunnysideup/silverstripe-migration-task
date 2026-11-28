@@ -6,11 +6,14 @@ use SilverStripe\Core\Config\Config;
 
 class MigrateDataTask extends MigrateDataTaskBase
 {
-    protected $title = 'Migrate Data';
+    protected string $title = 'Migrate Data';
 
-    protected $description = 'Migrates specific data defined in yml';
+    protected static string $description = 'Migrates specific data defined in yml';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     /**
      * an array that is formatted like this:

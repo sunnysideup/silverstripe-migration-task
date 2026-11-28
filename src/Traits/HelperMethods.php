@@ -24,6 +24,7 @@ trait HelperMethods
             } else {
                 $obj->delete();
             }
+
             @$obj->flushCache();
         } else {
             FlushNowImplementor::do_flush('DOES NOT EXIST', 'added');
@@ -108,6 +109,7 @@ trait HelperMethods
 
                 return true;
             }
+
             $this->flushNow('Table ' . $tableName . ' is already obsolete');
         } else {
             $this->flushNow('Table ' . $tableName . ' does not exist.');
@@ -137,6 +139,7 @@ trait HelperMethods
                     $this->makeTableObsolete($b, true);
                     $this->flushNow('Backing up ' . $b, 'deleted');
                 }
+
                 $this->dropTable($b);
             }
 
@@ -166,12 +169,14 @@ trait HelperMethods
 
             return;
         }
+
         if ($this->tableExists($b)) {
             $this->flushNow(' -- Destination table already exists "' . $b . '", consider using replaceTable', 'deleted');
 
             return;
         }
-        if (false !== strpos($a, '\\') || false !== strpos($b, '\\')) {
+
+        if (str_contains($a, '\\') || str_contains($b, '\\')) {
             $this->flushNow('Special slashes case "' . $a . '" to "' . $b . '"', 'warning');
             DB::query('ALTER TABLE "' . stripslashes($a) . '" RENAME "' . stripslashes($b) . '"');
         } else {
@@ -201,9 +206,7 @@ SQL;
     {
         if (null === $this->_schema) {
             $this->_schema = DB::get_schema();
-            $this->_schema->schemaUpdate(function () {
-                return true;
-            });
+            $this->_schema->schemaUpdate(fn() => true);
         }
 
         return $this->_schema;
@@ -211,9 +214,7 @@ SQL;
 
     protected function getSchemaForDataObject()
     {
-        if (null === $this->_schemaForDataObject) {
-            $this->_schemaForDataObject = DataObject::getSchema();
-        }
+        $this->_schemaForDataObject ??= DataObject::getSchema();
 
         return $this->_schemaForDataObject;
     }
@@ -252,6 +253,7 @@ SQL;
         } else {
             $obj->write();
         }
+
         $obj->flushCache();
     }
 

@@ -2,6 +2,9 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Symfony\Component\Console\Input\InputInterface;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
 use Sunnysideup\Flush\FlushNowImplementor;
@@ -24,9 +27,9 @@ use Sunnysideup\Flush\FlushNowImplementor;
  */
 class DeleteAllObsoleteFieldsAndTables extends BuildTask
 {
-    protected $title = 'Delete all obsolete tables and fields';
+    protected string $title = 'Delete all obsolete tables and fields';
 
-    protected $description = 'Remove all tables and fields with the words _obsolete, _copy, or _backup in it. Set forreal=1 to run it for real';
+    protected static string $description = 'Remove all tables and fields with the words _obsolete, _copy, or _backup in it. Set forreal=1 to run it for real';
 
     /**
      * If any of these tables are found in the database, they will be removed.
@@ -58,7 +61,7 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
         // 'SomeOldIndex'
     ];
 
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         if (empty($_REQUEST['forreal'])) {
             FlushNowImplementor::do_flush('=== Running in dry run mode. Add GET variable forreal to run for real. SQL will be displayed, but not executed ===');
@@ -81,7 +84,6 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
         }
 
         $obsoleteTables = $this->getTables(true);
-
         foreach ($obsoleteTables as $tableName) {
             $this->execute(sprintf('DROP TABLE "%s"', $tableName));
         }
@@ -91,6 +93,7 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
         }
 
         FlushNowImplementor::do_flush('Done');
+        return Command::SUCCESS;
     }
 
     protected function log($message)
@@ -98,7 +101,7 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
         FlushNowImplementor::do_flush($message);
     }
 
-    protected function execute($sql)
+    protected function execute($sql, PolyOutput $output)
     {
         if (empty($_REQUEST['forreal'])) {
             FlushNowImplementor::do_flush(sprintf('DRY RUN: Not running query: %s', $sql));
@@ -109,7 +112,7 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
         DB::query($sql);
         FlushNowImplementor::do_flush(sprintf('INFO: Successfully executed SQL: %s', $sql));
 
-        return true;
+        return Command::SUCCESS;
     }
 
     protected function getTables(?bool $obsoleteOnly = false)
@@ -124,11 +127,12 @@ class DeleteAllObsoleteFieldsAndTables extends BuildTask
                 foreach (['obsolete', 'copy', 'backup'] as $string) {
                     $haystack = strtolower($table);
                     $needle = '_' . $string;
-                    if (false !== strpos($haystack, $needle)) {
+                    if (str_contains($haystack, $needle)) {
                         $in = true;
                     }
                 }
             }
+
             if ($in) {
                 $tables[$table] = $table;
             }

@@ -2,6 +2,9 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Symfony\Component\Console\Input\InputInterface;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
@@ -20,9 +23,9 @@ use Sunnysideup\Flush\FlushNowImplementor;
  */
 class PublishAllPages extends BuildTask
 {
-    protected $title = 'Publish All Pages';
+    protected string $title = 'Publish All Pages';
 
-    protected $description = 'Publish All Pages on the Entire Site (copy content from draft to live)';
+    protected static string $description = 'Publish All Pages on the Entire Site (copy content from draft to live)';
 
     protected $step = 10;
 
@@ -44,7 +47,7 @@ class PublishAllPages extends BuildTask
         return $this;
     }
 
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         Environment::increaseTimeLimitTo();
         Environment::increaseMemoryLimitTo();
@@ -66,13 +69,16 @@ class PublishAllPages extends BuildTask
                             $page->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                             $page->publishRecursive();
                         }
+
                         $page->destroy();
                         unset($page);
                         ++$count;
                     }
+
                     $start += $this->step;
                     $pages = SiteTree::get()->limit($this->step, $start);
                 }
+
                 FlushNowImplementor::do_flush('</ol>');
                 FlushNowImplementor::do_flush('<h2>--- PUBLISHED ' . $count . ' Pages ---</h2>');
             } else {
@@ -88,20 +94,22 @@ class PublishAllPages extends BuildTask
             $tokenField = $fields->first();
             $tokenHtml = ($tokenField) ? $tokenField->FieldHolder() : '';
             $publishAllDescription = _t(
-                __CLASS__ . '.PUBALLFUN2',
+                self::class . '.PUBALLFUN2',
                 'Pressing this button will do the equivalent of going to every page and pressing "publish".  '
                     . "It's intended to be used after there have been massive edits of the content, such as when "
                     . 'the site was first built.'
             );
             $response .=
-                '<h1>' . _t(__CLASS__ . '.PUBALLFUN', 'Publish All functionality') . '</h1>
+                '<h1>' . _t(self::class . '.PUBALLFUN', 'Publish All functionality') . '</h1>
                 <p>' . $publishAllDescription . '</p>
                 <form method="get" action="">
                     <input type="submit" name="confirm" value="'
-                . _t(__CLASS__ . '.PUBALLCONFIRM', 'Please publish every page in the site', 'Confirmation button') . '" />'
+                . _t(self::class . '.PUBALLCONFIRM', 'Please publish every page in the site', 'Confirmation button') . '" />'
                 . $tokenHtml .
                 '</form>';
             FlushNowImplementor::do_flush($response);
         }
+
+        return Command::SUCCESS;
     }
 }

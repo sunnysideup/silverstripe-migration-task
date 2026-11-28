@@ -2,12 +2,14 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Symfony\Component\Console\Input\InputInterface;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
 use Exception;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\DB;
 use Sunnysideup\Flush\FlushNow;
 use Sunnysideup\MigrateData\Traits\HelperMethods;
 
@@ -16,11 +18,14 @@ abstract class MigrateDataTaskBase extends BuildTask
     use FlushNow;
     use HelperMethods;
 
-    protected $title = 'Abstract Migration Class';
+    protected string $title = 'Abstract Migration Class';
 
-    protected $description = 'Please extend this class';
+    protected static string $description = 'Please extend this class';
 
-    protected $enabled = false;
+    /**
+     * @config
+     */
+    private static $is_enabled = false;
 
     protected $_schema;
 
@@ -30,7 +35,7 @@ abstract class MigrateDataTaskBase extends BuildTask
 
     private $_cacheFieldExists = [];
 
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         $this->flushNowLine();
         $this->flushNow('THE START - look out for THE END ...');
@@ -47,9 +52,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         ini_set('memory_limit', '1024M');
         Environment::increaseMemoryLimitTo();
         Environment::increaseTimeLimitTo(7200);
-
         $this->performMigration();
-
         $this->flushNow('</ul>', '', false);
         $this->flushNow('');
         $this->flushNow('');
@@ -58,6 +61,7 @@ abstract class MigrateDataTaskBase extends BuildTask
         $this->flushNow('THE END');
         $this->flushNowLine();
         $this->flushNow('');
+        return Command::SUCCESS;
     }
 
     /**
@@ -84,21 +88,16 @@ abstract class MigrateDataTaskBase extends BuildTask
         if ([] !== $data) {
             $this->flushNow('<h3>Migrating data - Core Migration</h3>');
             foreach ($data as $dataItem) {
-                if (! isset($dataItem['include_inserts'])) {
-                    $dataItem['include_inserts'] = true;
-                }
-                if (! isset($dataItem['leftJoin'])) {
-                    $dataItem['leftJoin'] = [];
-                }
-                if (! isset($dataItem['where'])) {
-                    $dataItem['where'] = '';
-                }
-                if (! isset($dataItem['include_inserts'])) {
-                    $dataItem['include_inserts'] = true;
-                }
-                if (! isset($dataItem['new_table'])) {
-                    $dataItem['new_table'] = $dataItem['old_table'];
-                }
+                $dataItem['include_inserts'] ??= true;
+
+                $dataItem['leftJoin'] ??= [];
+
+                $dataItem['where'] ??= '';
+
+                $dataItem['include_inserts'] ??= true;
+
+                $dataItem['new_table'] ??= $dataItem['old_table'];
+
                 $dataItem['old_fields'] = [];
                 $dataItem['new_fields'] = [];
 
@@ -119,12 +118,14 @@ abstract class MigrateDataTaskBase extends BuildTask
                             $this->flushNow('Potential error in fields: ' . print_r($dataItem['old_fields'], 1), 'error');
                         }
                     }
+
                     foreach ($dataItem['new_fields'] as $value) {
                         if ((int) $value === $value) {
                             $this->flushNow('Potential error in fields: ' . print_r($dataItem['new_fields'], 1), 'error');
                         }
                     }
                 }
+
                 $this->flushNow('<h6>Migrating data ' . $dataItem['old_table'] . ' to ' . $dataItem['new_table'] . '</h6>');
                 $this->migrateSimple(
                     $dataItem['include_inserts'],
@@ -197,11 +198,13 @@ abstract class MigrateDataTaskBase extends BuildTask
                     if (0 === count($excludeIDs)) {
                         $excludeIDs = [0];
                     }
+
                     $wherePhrase = ' NOT IN (' . implode(', ', $excludeIDs) . ')';
                 } else {
                     if (0 === count($oldEntryIDs)) {
                         $oldEntryIDs = [0];
                     }
+
                     $wherePhrase = ' IN (' . implode(', ', $oldEntryIDs) . ')';
                 }
 
@@ -210,10 +213,11 @@ abstract class MigrateDataTaskBase extends BuildTask
                 if (count($fieldNamesNew) > 0) {
                     $updateQuery = 'UPDATE "' . $tableNew . '" AS "tablenew" ';
                     $updateQuery .= 'INNER JOIN "' . $tableOld . '" AS "tableold" ON "tablenew"."ID" = "tableold"."ID" ';
-                    if ('_versions' === substr($tableNew, -9)) {
+                    if (str_ends_with($tableNew, '_versions')) {
                         $updateQuery .= ' AND "tablenew"."RecordID" = "tableold"."RecordID" ';
                         // also link to RecordID ...
                     }
+
                     $updateQuery .= 'SET ';
                     $fieldNamesOldCount = count($fieldNamesOld);
                     $fieldNamesNewCount = count($fieldNamesNew);
@@ -221,8 +225,10 @@ abstract class MigrateDataTaskBase extends BuildTask
                         if ($i > 0) {
                             $updateQuery .= ', ';
                         }
+
                         $updateQuery .= '"tablenew"."' . $fieldNamesNew[$i] . '" = "tableold"."' . $fieldNamesOld[$i] . '" ';
                     }
+
                     $updateQuery .= 'WHERE "tablenew"."ID" ' . $wherePhrase . ';';
                     $this->flushNow(str_replace($wherePhrase, '........', $updateQuery));
                     $this->runUpdateQuery($updateQuery);

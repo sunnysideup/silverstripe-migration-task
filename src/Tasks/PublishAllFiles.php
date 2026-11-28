@@ -2,6 +2,7 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Exception;
 use SilverStripe\AssetAdmin\Controller\AssetAdmin;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Folder;
@@ -18,9 +19,9 @@ class PublishAllFiles extends MigrateDataTaskBase
      */
     public $admin;
 
-    protected $title = 'Publish All Files';
+    protected string $title = 'Publish All Files';
 
-    protected $description = 'Get all files ready to go - useful in SS3 to SS4 conversion.';
+    protected static string $description = 'Get all files ready to go - useful in SS3 to SS4 conversion.';
 
     protected $updateLocation = false;
 
@@ -30,7 +31,10 @@ class PublishAllFiles extends MigrateDataTaskBase
 
     protected $oneFileOnlyID = 0;
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     /**
      * @return PublishAllFiles
@@ -64,12 +68,14 @@ class PublishAllFiles extends MigrateDataTaskBase
         if ($this->oneFolderOnlyID && $this->oneFolderOnlyID !== $parentID) {
             return;
         }
+
         if ($parentID) {
             $folder = Folder::get_by_id($parentID);
             FlushNowImplementor::do_flush('<h3>Processing Folder: ' . $folder->getFilename() . '</h3>');
         } else {
             FlushNowImplementor::do_flush('<h3>Processing Root Folder</h3>');
         }
+
         $sqlQuery = new SQLSelect();
         $sqlQuery->setFrom('File');
         $sqlQuery->selectField('ID');
@@ -86,9 +92,11 @@ class PublishAllFiles extends MigrateDataTaskBase
                     $file->write();
                     $name = $file->getFilename();
                 }
+
                 if ($this->oneFileOnlyID && $this->oneFileOnlyID !== $file->ID) {
                     continue;
                 }
+
                 if ($name) {
                     if ($this->updateLocation) {
                         $this->updateLocationForOneFile($file, $name);
@@ -102,7 +110,7 @@ class PublishAllFiles extends MigrateDataTaskBase
                         } else {
                             FlushNowImplementor::do_flush('... Error in publishing V2 ...' . print_r($file->toMap(), 1), 'deleted');
                         }
-                    } catch (\Exception $exception) {
+                    } catch (Exception) {
                         FlushNowImplementor::do_flush('... Error in publishing V1 ...' . print_r($file->toMap(), 1), 'deleted');
                     }
                 } else {
@@ -117,11 +125,12 @@ class PublishAllFiles extends MigrateDataTaskBase
                                 $fileNameOld
                             );
                             DB::query(
-                                'UPDATE "File' . $suffix . '" SET "FileFilename" = \'' . $newFileName . '\' WHERE "ID" = \'' . $file->ID . '\' LIMIT 1;'
+                                'UPDATE "File' . $suffix . '" SET "FileFilename" = \'' . $newFileName . '\' WHERE "ID" = \'' . $file->ID . "' LIMIT 1;"
                             );
                             $fix = true;
                         }
                     }
+
                     if ($fix) {
                         FlushNowImplementor::do_flush(
                             '... Fixed file name for ' . $file->ID . ' - run this task again to complete.',
@@ -181,6 +190,7 @@ class PublishAllFiles extends MigrateDataTaskBase
         if (null !== $parentID) {
             $where = ' WHERE ParentID = ' . $parentID;
         }
+
         $count1 = DB::query('SELECT COUNT("ID") FROM "File" ' . $where)->value();
         $count2 = DB::query('SELECT COUNT("ID") FROM "File_Live" ' . $where)->value();
         if ($count1 === $count2) {
@@ -207,9 +217,11 @@ class PublishAllFiles extends MigrateDataTaskBase
         if ($this->generateThumbnails) {
             $this->admin->generateThumbnails($file);
         }
+
         $file->forceChange();
         $file->write();
         $file->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+
         $test = DB::query('SELECT COUNT(ID) FROM File_Live WHERE ID = ' . $file->ID)->value();
         if (0 === (int) $test) {
             FlushNowImplementor::do_flush('... error finding: ' . $name, 'deleted');

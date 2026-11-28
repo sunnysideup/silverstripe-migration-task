@@ -6,11 +6,14 @@ use SilverStripe\ORM\DB;
 
 class DraftVsLive extends MigrateDataTaskBase
 {
-    protected $title = 'Compare Drafts vs Live';
+    protected string $title = 'Compare Drafts vs Live';
 
-    protected $description = 'Go through every table and compare DRAFT vs Live';
+    protected static string $description = 'Go through every table and compare DRAFT vs Live';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $is_enabled = true;
 
     protected $selectedTables = [];
 
@@ -31,6 +34,7 @@ class DraftVsLive extends MigrateDataTaskBase
         } else {
             $dbTablesPresent = $this->selectedTables;
         }
+
         foreach ($dbTablesPresent as $table) {
             $this->missingColumns[$table] = [];
             $liveTable = $table . '_Live';
@@ -38,6 +42,7 @@ class DraftVsLive extends MigrateDataTaskBase
                 if ($this->deleteLiveOnlyRecords) {
                     $this->deleteLiveOnlyRecords($table, $liveTable);
                 }
+
                 //check count
                 $draftCount = (int) DB::query('SELECT COUNT(ID) FROM ' . $table . ' ORDER BY ID;')->value();
                 $liveCount = (int) DB::query('SELECT COUNT(ID) FROM ' . $liveTable . ' ORDER BY ID;')->value();
@@ -61,6 +66,7 @@ class DraftVsLive extends MigrateDataTaskBase
                 foreach ($draftRows as $draftRow) {
                     $allOk = $this->compareOneRow($draftRow, $table, $liveTable);
                 }
+
                 if ($allOk) {
                     $this->flushNow('... For matching rows, DRAFT and LIVE are identical.');
                 }
@@ -77,12 +83,10 @@ class DraftVsLive extends MigrateDataTaskBase
         foreach ($liveRows as $liveRow) {
             $results = array_diff($draftRow, $liveRow) + array_diff($liveRow, $draftRow);
             foreach (array_keys($results) as $key) {
-                if (! isset($draftRow[$key])) {
-                    $draftRow[$key] = '???';
-                }
-                if (! isset($liveRow[$key])) {
-                    $liveRow[$key] = '???';
-                }
+                $draftRow[$key] ??= '???';
+
+                $liveRow[$key] ??= '???';
+
                 $allOk = false;
                 $this->flushNow(
                     '... ... DRAFT !== LIVE for <strong>' . $table . '</strong>, ' .
@@ -117,6 +121,7 @@ class DraftVsLive extends MigrateDataTaskBase
             $tableB = 'DRAFT';
             $tableA = 'LIVE';
         }
+
         $result = array_diff_key($rowA, $rowB);
         foreach (array_keys($result) as $key) {
             $this->missingColumns[$table][$key] = $key;
@@ -125,6 +130,7 @@ class DraftVsLive extends MigrateDataTaskBase
                 'deleted'
             );
         }
+
         if (! $backwards) {
             $this->compareColumnsInner($rowB, $rowA, $table, true);
         }

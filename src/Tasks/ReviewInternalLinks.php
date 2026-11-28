@@ -2,6 +2,11 @@
 
 namespace Sunnysideup\MigrateData\Tasks;
 
+use Symfony\Component\Console\Input\InputInterface;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputOption;
+use DOMDocument;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Core\Environment;
 use SilverStripe\ORM\DataList;
@@ -9,9 +14,9 @@ use SilverStripe\ORM\DB;
 
 class ReviewInternalLinks extends MigrateDataTaskBase
 {
-    protected $title = 'Review Internal Links';
+    protected string $title = 'Review Internal Links';
 
-    protected $description = 'Goes through all the imported content and reviews internal links';
+    protected static string $description = 'Goes through all the imported content and reviews internal links';
 
     protected $type = 0;
 
@@ -31,11 +36,10 @@ class ReviewInternalLinks extends MigrateDataTaskBase
 
     protected static $filtered_class_names = [];
 
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         Environment::increaseTimeLimitTo();
         Environment::increaseMemoryLimitTo();
-
         $tableHTML = '
             <table>
                 <thead>
@@ -49,12 +53,14 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 <tbody>
         ';
         $ids = [];
-        if ($request->getVar('ids')) {
-            $ids = explode(',', (string) $request->getVar('ids'));
+        if ($input->getOption('ids')) {
+            $ids = explode(',', (string) $input->getOption('ids'));
         }
-        if ($request->getVar('type')) {
-            $this->type = $request->getVar('type');
+
+        if ($input->getOption('type')) {
+            $this->type = $input->getOption('type');
         }
+
         $objects = DataList::create();
         if (count($ids)) {
             echo $tableHTML;
@@ -63,15 +69,10 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 $this->printFields($object);
             }
         } else {
-            echo '
-                By default 200 random pages are loaded.
-
-            ';
-
+            $output->writeln('                By default 200 random pages are loaded.            ');
             echo $tableHTML;
-
-            if ($request->getVar('page')) {
-                if ('all' === $request->getVar('page')) {
+            if ($input->getOption('page')) {
+                if ('all' === $input->getOption('page')) {
                     $isPage = false;
                     $limit = 5000;
                     $this->step = 10;
@@ -79,35 +80,40 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 } else {
                     $isPage = true;
                     $limit = 500;
-                    $start = $limit * ((int) $request->getVar('page') - 1);
-                    echo '<h1>Page: ' . (int) $request->getVar('page') . '</h1>';
+                    $start = $limit * ((int) $input->getOption('page') - 1);
+                    echo '<h1>Page: ' . (int) $input->getOption('page') . '</h1>';
                 }
             } else {
                 $isPage = false;
                 $limit = 50;
                 $this->step = 51;
                 $start = 0;
-                echo '<h1>Random Selection</h1>';
+                $output->writeln('<h1>Random Selection</h1>');
             }
+
             for ($i = 0; $i < $limit; $i += $this->step) {
                 $objects = null;
                 if ($isPage) {
                     $objects = SiteTree::get()->sort(['ID' => 'ASC'])->limit($this->step, $i + $start);
                 }
+
                 $filter = $this->Config()->get('filtered_class_names');
                 if (! empty($filter)) {
                     $objects = $objects->filter($filter);
                 }
+
                 foreach ($objects as $object) {
                     $this->printFields($object);
                 }
             }
         }
+
         $linksAll = [];
         ksort($this->allLinks);
         foreach ($this->allLinks as $url => $details) {
             $linksAll[] = $url . ' | ' . $details['count'];
         }
+
         echo '
                     <tr>
                         <th>---</th>
@@ -127,6 +133,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         foreach ($this->replacements as $details) {
             $replacementsAll[] = 'FR: ' . $details['from'] . '<br />TO: ' . $details['to'] . '<br />RS: ' . $details['result'] . '<br /><br />';
         }
+
         echo '
                     <tr>
                         <th>---</th>
@@ -141,7 +148,8 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                         </th>
                     </tr>
         ';
-        echo '</tbody></table>';
+        $output->writeln('</tbody></table>');
+        return Command::SUCCESS;
     }
 
     public function printFields($object)
@@ -150,7 +158,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
         $links = [];
         foreach ($this->fieldsToTest as $field) {
             if (! empty($object->{$field})) {
-                $dom = new \DOMDocument();
+                $dom = new DOMDocument();
 
                 @$dom->loadHTML(
                     mb_convert_encoding($object->{$field}, 'HTML-ENTITIES', 'UTF-8'),
@@ -169,16 +177,15 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                         $this->cleanupLittleMistake($object, $field, $url);
 
                         $links[$url] = $url . ' | A | ' . $field;
+                        $this->allLinks[$url] ??= [
+                            'count' => 0,
+                            'type' => 'A',
+                        ];
 
-                        if (! isset($this->allLinks[$url])) {
-                            $this->allLinks[$url] = [
-                                'count' => 0,
-                                'type' => 'A',
-                            ];
-                        }
                         ++$this->allLinks[$url]['count'];
                     }
                 }
+
                 if (! $this->type || 'img' === strtolower($this->type)) {
                     $hrefs = $dom->getElementsByTagName('img');
                     for ($i = 0; $i < $hrefs->length; ++$i) {
@@ -187,13 +194,11 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                         $this->cleanupLittleMistake($object, $field, $url);
 
                         $links[$url] = $url . ' | IMG | ' . $field;
+                        $this->allLinks[$url] ??= [
+                            'count' => 0,
+                            'type' => 'IMG',
+                        ];
 
-                        if (! isset($this->allLinks[$url])) {
-                            $this->allLinks[$url] = [
-                                'count' => 0,
-                                'type' => 'IMG',
-                            ];
-                        }
                         ++$this->allLinks[$url]['count'];
                     }
                 } else {
@@ -201,6 +206,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 }
             }
         }
+
         echo '<tr>
             <td>' . $this->count . '</td>
             <td>
@@ -231,16 +237,18 @@ class ReviewInternalLinks extends MigrateDataTaskBase
             'assets/oldsite/' => 'images/',
         ];
         foreach ($oldNeedles as $oldNeedle => $newNeedle) {
-            if (false !== strpos($url, $oldNeedle)) {
+            if (str_contains($url, $oldNeedle)) {
                 $replacementURL = str_replace($oldNeedle, $newNeedle, $url);
                 $table = '';
                 // if($this->urlExists($url) === false && $this->urlExists($replacementURL) === true) {
                 if (strpos($url, "'")) {
                     user_error('bad url: ' . $url);
                 }
+
                 if ('Content' === $field) {
                     $table = 'SiteTree';
                 }
+
                 foreach (['', '_Live', '_Versions'] as $stage) {
                     DB::query('
                         UPDATE "' . $table . $stage . '"
@@ -252,6 +260,7 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                         WHERE ID = ' . $object->ID . ';
                     ');
                 }
+
                 $this->replacements[] = [
                     'from' => $url,
                     'to' => $replacementURL,
@@ -259,5 +268,10 @@ class ReviewInternalLinks extends MigrateDataTaskBase
                 ];
             }
         }
+    }
+
+    public function getOptions(): array
+    {
+        return [new InputOption('ids', null, InputOption::VALUE_NONE, 'do something specific'), new InputOption('type', null, InputOption::VALUE_NONE, 'do something specific'), new InputOption('page', null, InputOption::VALUE_NONE, 'do something specific')];
     }
 }
